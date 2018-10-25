@@ -1,0 +1,7 @@
+[package]
+name = "clibox"
+version = "0.1.0"
+authors = ["Frederik De Bleser <frederik@debleser.be>"]
+edition = "2018"
+
+[dependencies]

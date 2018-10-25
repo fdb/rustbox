@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Test</title>
+</head>
+<body>
+    <canvas id="c"></canvas>
+<script src="dist/rust_wasm.js"></script>
+<script>
+
+const canvas = document.getElementById('c');
+const gl = canvas.getContext('webgl');
+
+const appendNumberToBody = (number) => {
+    const $pre = document.createElement('pre');
+    $pre.textContent = number;
+    document.body.appendChild($pre);
+}
+
+const appendStringToBody = (s) => {
+    const $h2 = document.createElement('h2');
+    $h2.textContent = s;
+    document.body.appendChild($h2);
+}
+
+const glClear = (r, g, b, a) => {
+    gl.clearColor(r, g, b, a);
+    gl.clear(gl.COLOR_BUFFER_BIT);
+}
+
+const importObject = {
+    env: { appendNumberToBody, appendStringToBody, glClear, alert }
+};
+
+wasm_bindgen('dist/rust_wasm_bg.wasm').then(() => {
+    wasm_bindgen.run();
+});
+// fetch('rust_wasm_bg.wasm')
+//   .then(res => res.arrayBuffer())
+//   .then(buffer => WebAssembly.instantiate(buffer, importObject))
+//   .then(module => {
+    // module.instance.exports.run();
+    // const result = module.instance.exports.add_one(4);
+    // const el = document.createElement('h1');
+    // el.textContent = result;
+    // document.body.appendChild(el);
+  // });
+</script>
+</body>
+</html>
