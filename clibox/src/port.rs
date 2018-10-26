@@ -37,6 +37,33 @@ impl Port {
         Port::new(name, kind, PortDirection::In)
     }
 
+    pub fn new_int_port(name: &str, values: Vec<i32>, direction: PortDirection) -> Port {
+        Port {
+            name: name.to_owned(),
+            kind: PortKind::Int, 
+            values: values.iter().map(|v| PortValue::Int(*v)).collect(),
+            direction,
+        }
+    }
+
+    pub fn new_float_port(name: &str, values: Vec<f32>, direction: PortDirection) -> Port {
+        Port {
+            name: name.to_owned(),
+            kind: PortKind::Float, 
+            values: values.iter().map(|v| PortValue::Float(*v)).collect(),
+            direction,
+        }
+    }
+
+    pub fn new_string_port(name: &str, values: Vec<&str>, direction: PortDirection) -> Port {
+        Port {
+            name: name.to_owned(),
+            kind: PortKind::Float, 
+            values: values.iter().map(|v| PortValue::String(v.to_owned().to_string())).collect(),
+            direction,
+        }
+    }
+
     pub fn new_output(name: &str, kind: PortKind) -> Port {
         Port::new(name, kind, PortDirection::Out)
     }
@@ -72,14 +99,14 @@ impl Port {
         }
     }
 
-    // pub fn get_string(&self, index: usize) -> String {
-    //     let v = &self.values[index % self.values.len()];
-    //     match v {
-    //         &PortValue::Int(v) => format!("{}", v),
-    //         &PortValue::Float(v) => format!("{}", v),
-    //         &PortValue::String(v) => v.clone(),
-    //     }
-    // }
+    pub fn get_string(&self, index: usize) -> String {
+        let v = &self.values[index % self.values.len()];
+        match &v {
+            &PortValue::Int(v) => format!("{}", v),
+            &PortValue::Float(v) => format!("{}", v),
+            &PortValue::String(v) => v.clone(),
+        }
+    }
 
     pub fn ensure_size(&mut self, new_size: usize) {
         if new_size > self.values.len() {

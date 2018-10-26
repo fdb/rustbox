@@ -1,4 +1,4 @@
-use super::{Port, PortValue};
+use super::{Port, PortValue, PortDirection};
 
 pub struct NodeData {
     pub name: String,
@@ -17,6 +17,30 @@ impl NodeData {
             inputs: Vec::new(),
             outputs: Vec::new(),
         }
+    }
+
+    pub fn add_int_input_port(&mut self, name: &str, values: Vec<i32>) {
+        self.inputs.push(Port::new_int_port(name, values, PortDirection::In));
+    }
+
+    pub fn add_float_input_port(&mut self, name: &str, values: Vec<f32>) {
+        self.inputs.push(Port::new_float_port(name, values, PortDirection::In));
+    }
+
+    pub fn add_string_input_port(&mut self, name: &str, values: Vec<&str>) {
+        self.inputs.push(Port::new_string_port(name, values, PortDirection::In));
+    }
+
+    pub fn add_int_output_port(&mut self, name: &str) {
+        self.outputs.push(Port::new_int_port(name, vec![], PortDirection::Out));
+    }
+
+    pub fn add_float_output_port(&mut self, name: &str) {
+        self.outputs.push(Port::new_float_port(name, vec![], PortDirection::Out));
+    }
+
+    pub fn add_string_output_port(&mut self, name: &str) {
+        self.inputs.push(Port::new_string_port(name, vec![], PortDirection::Out));
     }
 }
 
@@ -40,6 +64,7 @@ pub trait Node {
             Some(port) => Some(port.get_float(index))
         }
     }
+
     fn set_float(&mut self, name: &str, index: usize, v: f32) { 
         match self.get_input_mut(name) {
             None => {},
