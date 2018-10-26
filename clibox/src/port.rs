@@ -64,7 +64,7 @@ impl Port {
     }
 
     pub fn to_string(&self) -> String {
-        match self.value {
+        match &self.value {
             PortValue::Int(v) => format!("{}", v),
             PortValue::Float(v) => format!("{}", v),
             PortValue::String(v) => v.clone(),
@@ -72,7 +72,7 @@ impl Port {
     }
 
     pub fn set_int(&mut self, v: i32) {
-        match self.value {
+        match &self.value {
             PortValue::Int(_) => self.value = PortValue::Int(v),
             PortValue::Float(_) => self.value = PortValue::Float(v as f32),
             PortValue::String(_) => self.value = PortValue::String(format!("{}", v)),
@@ -80,7 +80,7 @@ impl Port {
     }
 
     pub fn set_float(&mut self, v: f32) {
-        match self.value {
+        match &self.value {
             PortValue::Int(_) => self.value = PortValue::Int(v as i32),
             PortValue::Float(_) => self.value = PortValue::Float(v),
             PortValue::String(_) => self.value = PortValue::String(format!("{}", v)),
@@ -88,7 +88,7 @@ impl Port {
     }
 
     pub fn set_string(&mut self, s: &str) {
-        match self.value {
+        match &self.value {
             PortValue::Int(_) => self.value = PortValue::Int(0),
             PortValue::Float(_) => self.value = PortValue::Float(0.0),
             PortValue::String(_) => self.value = PortValue::String(s.to_owned()),

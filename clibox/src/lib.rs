@@ -1,46 +1,58 @@
 mod port;
 mod node;
-mod op;
+//mod op;
 
 pub use self::port::{PortPolarity, PortKind, PortValue, Port};
-pub use self::node::{Node};
-pub use self::op::{Op};
+pub use self::node::{Node, NodeData};
 
-struct NullOp {}
-
-impl Op for NullOp {
-    fn run(&self, node: &mut Node) {}
+struct NullNode<'a> {
+    data: NodeData<'a>,
 }
 
-struct AddOp<'a> {
-    in_a: Option<&'a Port>,
-    in_b: Option<&'a Port>,
-    out: Option<&'a Port>,
+impl<'a> NullNode<'a> {
+    fn new() -> NullNode<'a> {
+        NullNode {
+            data: NodeData::new("Null", 0, 0)
+        }
+    }
 }
 
-impl<'a> AddOp<'a> {
-    fn new() -> Node {
-        let mut op = Box::new(AddOp { in_a: None, in_b: None, out: None });
+impl<'a> Node<'a> for NullNode<'a> {
+    fn get_node_data(&'a self) -> &'a NodeData { &self.data }
+    fn get_node_data_mut(&'a mut self) -> &'a mut NodeData { &mut self.data }
+
+    fn run(&mut self) {}
+}
+
+struct AddNode<'a> {
+    data: NodeData<'a>,
+    in_a: Port,
+    in_b: Port,
+    out: Port,
+}
+
+impl<'a> AddNode<'a> {
+    fn new() -> AddNode<'a> {
         let in_a = Port::new_input("a", PortKind::Float);
         let in_b = Port::new_input("b", PortKind::Float);
         let out = Port::new_output("out", PortKind::Float);
-        op.in_a = Some(&in_a);
-        op.in_b = Some(&in_b);
-        op.out = Some(&out);
-        let mut node = Node::new("Add", op);
-        node.ports.push(in_a);
-        node.ports.push(in_b);
-        node.ports.push(out);
+        let data = NodeData::new("Add", 0, 0);
+        let mut node = AddNode { data, in_a, in_b, out };
+        // node.get_node_data_mut().inputs.push(&node.in_a);
+        // node.get_node_data_mut().inputs.push(&node.in_b);
+        // node.get_node_data_mut().outputs.push(&node.out);
         node
     }
 }
 
-impl<'a> Op for AddOp<'a> {
+impl<'a> Node<'a> for AddNode<'a> {
+    fn get_node_data(&'a self) -> &'a NodeData { &self.data }
+    fn get_node_data_mut(&'a mut self) -> &'a mut NodeData { &mut self.data }
 
-    fn run(&self, node: &mut Node) {
-        let a = self.in_a.unwrap().to_float();
-        let b = self.in_b.unwrap().to_float();
-        self.out.unwrap().set_float(a + b);
+    fn run(&mut self) {
+        let a = self.in_a.to_float();
+        let b = self.in_b.to_float();
+        self.out.set_float(a + b);
     }
 }
 
@@ -50,11 +62,12 @@ mod test {
 
     #[test]
     fn create_node() {
-        let node = Node::new("Add", Box::new(NullOp {}));
-        assert_eq!(node.name, "alpha");
-        assert_eq!(node.ports.len(), 3);
-        assert_eq!(node.ports[0].name, "a");
-        assert_eq!(node.ports[1].name, "b");
-        assert_eq!(node.ports[2].name, "out");
+        let node = AddNode::new();
+        assert_eq!(node.get_name(), "Add");
+        assert_eq!(node.get_inputs().len(), 2);
+        assert_eq!(node.get_outputs().len(), 1);
+        assert_eq!(node.get_inputs()[0].name, "a");
+        assert_eq!(node.get_inputs()[1].name, "b");
+        assert_eq!(node.get_outputs()[0].name, "out");
     }
 }
