@@ -1,4 +1,4 @@
-use super::{Port};
+use super::{Port, PortValue};
 
 pub struct NodeData {
     pub name: String,
@@ -34,17 +34,33 @@ pub trait Node {
     fn get_input_mut(&mut self, name: &str) -> Option<&mut Port> { self.get_node_data_mut().inputs.iter_mut().find(|p| p.name == name) }
     fn get_output(&self, name: &str) -> Option<&Port> { self.get_node_data().outputs.iter().find(|p| p.name == name) }
     fn get_output_mut(&mut self, name: &str) -> Option<&mut Port> { self.get_node_data_mut().outputs.iter_mut().find(|p| p.name == name) }
-    fn set_float(&mut self, name: &str, v: f32) { 
-        match self.get_input_mut(name) {
-            None => {},
-            Some(input) => input.set_float(v)
-        }
-    }
-    fn get_float_output(&self, name: &str) -> Option<f32> { 
+    fn get_float_output(&self, name: &str, index: usize) -> Option<f32> { 
         match self.get_output(name) {
             None => None,
-            Some(port) => Some(port.to_float())
+            Some(port) => Some(port.get_float(index))
         }
+    }
+    fn set_float(&mut self, name: &str, index: usize, v: f32) { 
+        match self.get_input_mut(name) {
+            None => {},
+            Some(input) => input.set_float(index, v)
+        }
+    }
+    fn set_output_floats(&mut self, name: &str, values: &Vec<f32>) {
+        let out = self.get_output_mut(name);
+        match out {
+            None => {},
+            Some(out) => {
+                let mut wrapped_values = Vec::new();
+                for v in values {
+                    wrapped_values.push(PortValue::Float(*v))
+                }
+                out.values = wrapped_values;
+            }
+        }
+    }
+    fn get_max_input_size(&self) -> usize {
+        self.get_node_data().inputs.iter().fold(0, |acc, p| if acc > p.size() { acc } else { p.size() })
     }
 }
 
