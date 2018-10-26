@@ -1,18 +1,21 @@
 mod port;
 mod node;
-//mod op;
+mod connection;
+mod network;
 
 pub use self::port::{PortDirection, PortKind, PortValue, Port};
 pub use self::node::{Node, NodeData};
+pub use self::connection::{Connection};
+pub use self::network::{Network};
 
 struct NullNode {
     data: NodeData
 }
 
 impl NullNode {
-    fn new(x: i32, y: i32) -> NullNode {
+    fn new(id: usize, x: i32, y: i32) -> NullNode {
         NullNode {
-            data: NodeData::new("Null", x, y)
+            data: NodeData::new(id, "Null", x, y)
         }
     }
 }
@@ -32,11 +35,11 @@ struct AddNode {
 }
 
 impl AddNode {
-    pub fn new(x: i32, y: i32) -> AddNode {
+    pub fn new(id: usize, x: i32, y: i32) -> AddNode {
         // let in_a = Port::new_input("a", PortKind::Float);
         // let in_b = Port::new_input("b", PortKind::Float);
         // let out = Port::new_output("out", PortKind::Float);
-        let mut data = NodeData::new("Add", x, y);
+        let mut data = NodeData::new(id, "Add", x, y);
         data.add_float_input_port("a", vec![0.0]);
         data.add_float_input_port("b", vec![0.0]);
         data.add_float_output_port("out");
@@ -74,8 +77,8 @@ struct ParseFloatsNode {
 }
 
 impl ParseFloatsNode {
-    pub fn new(x: i32, y: i32) -> ParseFloatsNode {
-        let mut data = NodeData::new("Parse Floats", x, y);
+    pub fn new(id: usize, x: i32, y: i32) -> ParseFloatsNode {
+        let mut data = NodeData::new(id, "Parse Floats", x, y);
         data.add_string_input_port("s", vec!["1;2;3;4;5"]);
         data.add_float_output_port("out");
         ParseFloatsNode { data }
@@ -101,11 +104,11 @@ impl Node for ParseFloatsNode {
 }
 
 
-pub fn new_node(type_name: &str, x: i32, y: i32) -> Option<Box<Node>> {
+pub fn new_node(id: usize, type_name: &str, x: i32, y: i32) -> Option<Box<Node>> {
     match type_name {
-        "Null" => Some(Box::new(NullNode::new(x, y))),
-        "Add" => Some(Box::new(AddNode::new(x, y))),
-        "Parse Floats" => Some(Box::new(ParseFloatsNode::new(x, y))),
+        "Null" => Some(Box::new(NullNode::new(id, x, y))),
+        "Add" => Some(Box::new(AddNode::new(id, x, y))),
+        "Parse Floats" => Some(Box::new(ParseFloatsNode::new(id, x, y))),
         _ => None
     }
 }
@@ -116,7 +119,7 @@ mod test {
 
     #[test]
     fn create_node() {
-        let mut node = new_node("Add", 0, 0).unwrap();
+        let mut node = new_node(1, "Add", 0, 0).unwrap();
         assert_eq!(node.get_name(), "Add");
         assert_eq!(node.get_inputs().len(), 2);
         assert_eq!(node.get_outputs().len(), 1);
@@ -136,7 +139,7 @@ mod test {
 
     #[test]
     fn test_parse_floats() {
-        let mut node = new_node("Parse Floats", 0, 0).unwrap();
+        let mut node = new_node(1, "Parse Floats", 0, 0).unwrap();
         node.run();
         assert_eq!(node.get_output("out").unwrap().size(), 5);
         assert_eq!(node.get_float_output("out", 0).unwrap(), 1.0);
@@ -145,5 +148,21 @@ mod test {
         assert_eq!(node.get_float_output("out", 3).unwrap(), 4.0);
         assert_eq!(node.get_float_output("out", 4).unwrap(), 5.0);
         assert_eq!(node.get_float_output("out", 5).unwrap(), 1.0); // Output wraps
+    }
+
+    #[test]
+    fn test_network() {
+        let mut network = Network::new();
+        let parse_floats_node = new_node(1, "Parse Floats", 0, 0).unwrap();
+        network.nodes.push(parse_floats_node);
+        let mut add_node = new_node(2, "Add", 0, 0).unwrap();
+        add_node.set_float("b", 0, 100.0);
+        network.nodes.push(add_node);
+        network.connections.push(Connection::new(1, "out".to_owned(), 2, "a".to_owned()));
+        network.run();
+        let node = network.get_node(2).unwrap();
+        assert_eq!(node.get_output("out").unwrap().size(), 5);
+        assert_eq!(node.get_float_output("out", 0).unwrap(), 100.0);
+        assert_eq!(node.get_float_output("out", 4).unwrap(), 500.0);
     }
 }

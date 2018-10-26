@@ -1,6 +1,7 @@
 use super::{Port, PortValue, PortDirection};
 
 pub struct NodeData {
+    pub id: usize, 
     pub name: String,
     pub x: i32,
     pub y: i32,
@@ -9,8 +10,9 @@ pub struct NodeData {
 }
 
 impl NodeData {
-    pub fn new(name: &str, x: i32, y: i32) -> NodeData {
+    pub fn new(id: usize, name: &str, x: i32, y: i32) -> NodeData {
         NodeData {
+            id,
             name: name.to_owned(),
             x, 
             y,
@@ -49,6 +51,7 @@ pub trait Node {
     fn get_node_data_mut(& mut self) -> & mut NodeData;
     fn run(&mut self);
 
+    fn get_id(& self) -> usize { self.get_node_data().id }
     fn get_name(& self) -> String { self.get_node_data().name.clone() }
     fn get_x(& self) -> i32 { self.get_node_data().x }
     fn get_y(& self) -> i32 { self.get_node_data().y }
