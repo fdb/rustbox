@@ -159,7 +159,8 @@ mod test {
         add_node.set_float("b", 0, 100.0);
         network.nodes.push(add_node);
         network.connections.push(Connection::new(1, "out".to_owned(), 2, "a".to_owned()));
-        network.run();
+        network.rendered_id = 2;
+        network.run().unwrap();
         let node = network.get_node(2).unwrap();
         assert_eq!(node.get_output("out").unwrap().size(), 5);
         assert_eq!(node.get_float_output("out", 0).unwrap(), 100.0);
