@@ -35,6 +35,41 @@ impl Network {
         Ok(())
     }
 
+    // fn eval_node(&mut self, id: usize) -> Result<(), &'static str> {
+    //     let inputs = {
+    //         let node = self.get_node(id);
+    //         // FIXME: check if dirty
+    //         if node.is_none() {
+    //             return Err("Could not find node.");
+    //         }
+    //         node.unwrap().get_inputs().clone()
+    //     };
+    //     for port in inputs {
+    //         self.eval_port(id, &port.name);
+    //     }
+    //     {
+    //         self.get_node_mut(id).unwrap().run(); // FIXME: node run should return a result.
+    //     }
+    //     Ok(())
+    // }
+
+    // fn eval_port(&mut self, node_id: usize, port_name: &str) -> Result<(), &'static str> {
+    //     let conn = self.get_connection_with_input(node_id, port_name);
+    //     if conn.is_some() {
+    //         let conn = conn.unwrap();
+    //         self.eval_node(conn.output_id)?;
+    //         let values = {
+    //             let output_port = self.get_output_port(conn.output_id, &conn.output_port).unwrap();
+    //             output_port.values.clone()
+    //         };
+    //         let mut input_port = self.get_input_port_mut(node_id, port_name).unwrap();
+    //         input_port.values = values;
+    //     } else {
+    //         // The port value doesn't need to be updated.
+    //     }
+    //     Ok(())
+    // }
+
     pub fn delete_node(&mut self, id: usize) {
         self.nodes.retain(|n| n.get_id() != id);
         if self.rendered_id == id {
@@ -51,9 +86,18 @@ impl Network {
         self.nodes.iter().find(|n| n.get_id() == id)
     }
 
+    pub fn get_node_mut(&mut self, id: usize) -> Option<&mut Box<Node>> {
+        self.nodes.iter_mut().find(|n| n.get_id() == id)
+    }
+
     pub fn get_input_port(&self, id: usize, port_name: &str) -> Option<&Port> {
         let node = self.get_node(id)?;
         node.get_input(port_name)
+    }
+
+    pub fn get_input_port_mut(&mut self, id: usize, port_name: &str) -> Option<&mut Port> {
+        let node = self.get_node_mut(id)?;
+        node.get_input_mut(port_name)
     }
 
     pub fn get_output_port(&self, id: usize, port_name: &str) -> Option<&Port> {
@@ -61,11 +105,15 @@ impl Network {
         node.get_output(port_name)
     }
 
+    pub fn get_connection_with_input(&self, input_id: usize, input_port: &str) -> Option<&Connection> {
+        self.connections.iter().find(|c| c.input_id == input_id && c.input_port == input_port)
+    }
+
 }
 
 #[cfg(test)]
 mod test {
-    use super::*;
+    // use super::*;
 
     #[test]
     fn delete_node() {

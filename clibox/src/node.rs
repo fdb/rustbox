@@ -1,7 +1,7 @@
 use super::{Port, PortValue, PortDirection};
 
 pub struct NodeData {
-    pub id: usize, 
+    pub id: usize,
     pub name: String,
     pub x: i32,
     pub y: i32,
@@ -14,7 +14,7 @@ impl NodeData {
         NodeData {
             id,
             name: name.to_owned(),
-            x, 
+            x,
             y,
             inputs: Vec::new(),
             outputs: Vec::new(),
@@ -61,14 +61,14 @@ pub trait Node {
     fn get_input_mut(&mut self, name: &str) -> Option<&mut Port> { self.get_node_data_mut().inputs.iter_mut().find(|p| p.name == name) }
     fn get_output(&self, name: &str) -> Option<&Port> { self.get_node_data().outputs.iter().find(|p| p.name == name) }
     fn get_output_mut(&mut self, name: &str) -> Option<&mut Port> { self.get_node_data_mut().outputs.iter_mut().find(|p| p.name == name) }
-    fn get_float_output(&self, name: &str, index: usize) -> Option<f32> { 
+    fn get_float_output(&self, name: &str, index: usize) -> Option<f32> {
         match self.get_output(name) {
             None => None,
             Some(port) => Some(port.get_float(index))
         }
     }
 
-    fn set_float(&mut self, name: &str, index: usize, v: f32) { 
+    fn set_float(&mut self, name: &str, index: usize, v: f32) {
         match self.get_input_mut(name) {
             None => {},
             Some(input) => input.set_float(index, v)
