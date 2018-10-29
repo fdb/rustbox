@@ -3,18 +3,44 @@ pub enum PortDirection {
     Out,
 }
 
-#[derive(Copy, Clone)]
+#[derive(Debug, Copy, Clone)]
 pub enum PortKind {
     Int,
     Float,
     String,
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub enum PortValue {
     Int(i32),
     Float(f32),
     String(String),
+}
+
+impl PortValue {
+    pub fn to_int(&self) -> i32 {
+        match self {
+            &PortValue::Int(v) => v,
+            &PortValue::Float(v) => v as i32,
+            &PortValue::String(_) => 0,
+        }
+    }
+
+    pub fn to_float(&self) -> f32 {
+        match self {
+            &PortValue::Int(v) => v as f32,
+            &PortValue::Float(v) => v,
+            &PortValue::String(_) => 0.0,
+        }
+    }
+
+    pub fn to_string(&self) -> String {
+        match &self {
+            &PortValue::Int(v) => format!("{}", v),
+            &PortValue::Float(v) => format!("{}", v),
+            &PortValue::String(v) => v.clone(),
+        }
+    }
 }
 
 pub struct Port {
@@ -29,7 +55,7 @@ impl Port {
         match kind {
             PortKind::Int => PortValue::Int(0),
             PortKind::Float => PortValue::Float(0.0),
-            PortKind::String => PortValue::String("".to_owned())
+            PortKind::String => PortValue::String("".to_owned()),
         }
     }
 
@@ -40,7 +66,7 @@ impl Port {
     pub fn new_int_port(name: &str, values: Vec<i32>, direction: PortDirection) -> Port {
         Port {
             name: name.to_owned(),
-            kind: PortKind::Int, 
+            kind: PortKind::Int,
             values: values.iter().map(|v| PortValue::Int(*v)).collect(),
             direction,
         }
@@ -49,7 +75,7 @@ impl Port {
     pub fn new_float_port(name: &str, values: Vec<f32>, direction: PortDirection) -> Port {
         Port {
             name: name.to_owned(),
-            kind: PortKind::Float, 
+            kind: PortKind::Float,
             values: values.iter().map(|v| PortValue::Float(*v)).collect(),
             direction,
         }
@@ -58,8 +84,11 @@ impl Port {
     pub fn new_string_port(name: &str, values: Vec<&str>, direction: PortDirection) -> Port {
         Port {
             name: name.to_owned(),
-            kind: PortKind::Float, 
-            values: values.iter().map(|v| PortValue::String(v.to_owned().to_string())).collect(),
+            kind: PortKind::Float,
+            values: values
+                .iter()
+                .map(|v| PortValue::String(v.to_owned().to_string()))
+                .collect(),
             direction,
         }
     }
@@ -73,7 +102,7 @@ impl Port {
             name: name.to_owned(),
             kind,
             values: vec![Port::default_value(kind)],
-            direction
+            direction,
         }
     }
 
@@ -83,29 +112,17 @@ impl Port {
 
     pub fn get_int(&self, index: usize) -> i32 {
         let v = &self.values[index % self.values.len()];
-        match v {
-            &PortValue::Int(v) => v,
-            &PortValue::Float(v) => v as i32,
-            &PortValue::String(_) => 0,
-        }
+        v.to_int()
     }
 
     pub fn get_float(&self, index: usize) -> f32 {
         let v = &self.values[index % self.values.len()];
-        match v {
-            &PortValue::Int(v) => v as f32,
-            &PortValue::Float(v) => v,
-            &PortValue::String(_) => 0.0,
-        }
+        v.to_float()
     }
 
     pub fn get_string(&self, index: usize) -> String {
         let v = &self.values[index % self.values.len()];
-        match &v {
-            &PortValue::Int(v) => format!("{}", v),
-            &PortValue::Float(v) => format!("{}", v),
-            &PortValue::String(v) => v.clone(),
-        }
+        v.to_string()
     }
 
     pub fn ensure_size(&mut self, new_size: usize) {

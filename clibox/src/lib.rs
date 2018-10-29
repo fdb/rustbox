@@ -2,13 +2,16 @@ mod connection;
 mod network;
 mod node;
 mod port;
+mod render_context;
 
 pub use self::connection::Connection;
 pub use self::network::Network;
 pub use self::node::{Node, NodeData};
 pub use self::port::{Port, PortDirection, PortKind, PortValue};
+pub use self::render_context::RenderContext;
 
 pub type NodeId = usize;
+pub type PortIndex = usize;
 
 struct NullNode {
     data: NodeData,
@@ -30,7 +33,7 @@ impl Node for NullNode {
         &mut self.data
     }
 
-    fn run(&mut self) {}
+    fn render(&self, _ctx: &mut RenderContext) {}
 }
 
 struct AddNode {
@@ -65,20 +68,25 @@ impl Node for AddNode {
         &mut self.data
     }
 
-    fn run(&mut self) {
-        let max_size = self.get_max_input_size();
+    fn render(&self, ctx: &mut RenderContext) {
+        let max_size = ctx.get_max_input_size(self.get_id());
         let mut results = Vec::with_capacity(max_size);
-        let in_a = self.get_input("a").unwrap();
-        let in_b = self.get_input("b").unwrap();
+        let in_a = ctx.get_input_values(self.get_id(), 0);
+        let in_b = ctx.get_input_values(self.get_id(), 1);
+
+        //let in_a = self.get_input(0).unwrap();
+        //let in_b = self.get_input(1).unwrap();
         //let out = self.get_output_mut("out").unwrap();
         //out.ensure_size(max_size);
         for i in 0..max_size {
-            let a = in_a.get_float(i);
-            let b = in_b.get_float(i);
-            results.push(a + b);
+            //let a = in_a.get_float(i);
+            //let b = in_b.get_float(i);
+            let a = in_a[i % in_a.len()].to_float();
+            let b = in_b[i % in_b.len()].to_float();
+            results.push(PortValue::Float(a + b));
             //out.set_float(i, a + b);
         }
-        self.set_output_floats("out", &results);
+        ctx.set_output_values(self.get_id(), 0, results);
     }
 }
 
@@ -103,17 +111,17 @@ impl Node for ParseFloatsNode {
         &mut self.data
     }
 
-    fn run(&mut self) {
+    fn render(&self, ctx: &mut RenderContext) {
         let max_size = self.get_max_input_size();
         assert_eq!(max_size, 1); // FIXME: support more than one string and combine them.
-        let in_s = self.get_input("s").unwrap();
+        let in_s = self.get_input(0).unwrap();
         let s = in_s.get_string(0);
         let mut results = Vec::new();
         for part in s.split(';') {
             let v = part.parse::<f32>().unwrap();
-            results.push(v);
+            results.push(PortValue::Float(v));
         }
-        self.set_output_floats("out", &results);
+        ctx.set_output_values(self.get_id(), 0, results);
     }
 }
 
@@ -130,6 +138,23 @@ pub fn new_node(id: NodeId, type_name: &str, x: i32, y: i32) -> Option<Box<Node>
 mod test {
     use super::*;
 
+    fn render_single_node(
+        node: Box<Node>,
+        output_port_index: PortIndex,
+    ) -> Result<Vec<PortValue>, &'static str> {
+        let node_id = node.get_id();
+        let mut network = Network::new();
+        network.nodes.push(node);
+        network.rendered_id = node_id;
+        let mut ctx = RenderContext::new(&network);
+        // FIXME: ctx.render()
+        network.render(&mut ctx)?;
+        Ok(ctx
+            .get_output_values(node_id, output_port_index)
+            .unwrap()
+            .clone())
+    }
+
     #[test]
     fn create_node() {
         let mut node = new_node(1, "Add", 0, 0).unwrap();
@@ -144,23 +169,23 @@ mod test {
         node.set_float("a", 1, 300.0);
         node.set_float("b", 1, 500.0);
         assert_eq!(node.get_max_input_size(), 2);
-        node.run();
-        assert_eq!(node.get_output("out").unwrap().size(), 2);
-        assert_eq!(node.get_float_output("out", 0).unwrap(), 8.0);
-        assert_eq!(node.get_float_output("out", 1).unwrap(), 800.0);
+        let results = render_single_node(node, 0).unwrap();
+        assert_eq!(results.len(), 2);
+        assert_eq!(results[0].to_float(), 8.0);
+        assert_eq!(results[1].to_float(), 800.0);
     }
 
     #[test]
     fn test_parse_floats() {
-        let mut node = new_node(1, "Parse Floats", 0, 0).unwrap();
-        node.run();
-        assert_eq!(node.get_output("out").unwrap().size(), 5);
-        assert_eq!(node.get_float_output("out", 0).unwrap(), 1.0);
-        assert_eq!(node.get_float_output("out", 1).unwrap(), 2.0);
-        assert_eq!(node.get_float_output("out", 2).unwrap(), 3.0);
-        assert_eq!(node.get_float_output("out", 3).unwrap(), 4.0);
-        assert_eq!(node.get_float_output("out", 4).unwrap(), 5.0);
-        assert_eq!(node.get_float_output("out", 5).unwrap(), 1.0); // Output wraps
+        let node = new_node(1, "Parse Floats", 0, 0).unwrap();
+        let results = render_single_node(node, 0).unwrap();
+        assert_eq!(results.len(), 5);
+        assert_eq!(results[0].to_float(), 1.0);
+        assert_eq!(results[1].to_float(), 2.0);
+        assert_eq!(results[2].to_float(), 3.0);
+        assert_eq!(results[3].to_float(), 4.0);
+        assert_eq!(results[4].to_float(), 5.0);
+        // assert_eq!(results[5].to_float(), 1.0); // Output wraps // FIXME use slice here
     }
 
     #[test]
@@ -172,14 +197,13 @@ mod test {
         let mut add_node = new_node(2, "Add", 0, 0).unwrap();
         add_node.set_float("b", 0, 100.0);
         network.nodes.push(add_node);
-        network
-            .connections
-            .push(Connection::new(1, "out".to_owned(), 2, "a".to_owned()));
+        network.connections.push(Connection::new(1, 0, 2, 0));
         network.rendered_id = 2;
-        network.run().unwrap();
-        let node = network.get_node(2).unwrap();
-        assert_eq!(node.get_output("out").unwrap().size(), 5);
-        assert_eq!(node.get_float_output("out", 0).unwrap(), 100.0);
-        assert_eq!(node.get_float_output("out", 4).unwrap(), 500.0);
+        let mut ctx = RenderContext::new(&network);
+        network.render(&mut ctx).unwrap();
+        let values = ctx.get_output_values(network.rendered_id, 0).unwrap();
+        assert_eq!(values.len(), 5);
+        assert_eq!(values[0].to_float(), 101.0);
+        assert_eq!(values[4].to_float(), 105.0);
     }
 }
