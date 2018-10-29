@@ -1,7 +1,7 @@
-use super::{Connection, Node, Port};
+use super::{NodeId, Connection, Node, Port};
 
 pub struct Network {
-    pub rendered_id: usize,
+    pub rendered_id: NodeId,
     pub nodes: Vec<Box<Node>>,
     pub connections: Vec<Connection>,
 }
@@ -15,7 +15,7 @@ impl Network {
         }
     }
 
-    pub fn connect(&mut self, output_id: usize, output_port: &str, input_id: usize, input_port: &str) -> Result<(), &'static str> {
+    pub fn connect(&mut self, output_id: NodeId, output_port: &str, input_id: NodeId, input_port: &str) -> Result<(), &'static str> {
         let output_node = self.get_node(output_id);
         if output_node.is_none() { return Err("Output node could not be found."); }
         let input_node = self.get_node(input_id);
@@ -35,7 +35,7 @@ impl Network {
         Ok(())
     }
 
-    // fn eval_node(&mut self, id: usize) -> Result<(), &'static str> {
+    // fn eval_node(&mut self, id: NodeId) -> Result<(), &'static str> {
     //     let inputs = {
     //         let node = self.get_node(id);
     //         // FIXME: check if dirty
@@ -53,7 +53,7 @@ impl Network {
     //     Ok(())
     // }
 
-    // fn eval_port(&mut self, node_id: usize, port_name: &str) -> Result<(), &'static str> {
+    // fn eval_port(&mut self, node_id: NodeId, port_name: &str) -> Result<(), &'static str> {
     //     let conn = self.get_connection_with_input(node_id, port_name);
     //     if conn.is_some() {
     //         let conn = conn.unwrap();
@@ -70,7 +70,7 @@ impl Network {
     //     Ok(())
     // }
 
-    pub fn delete_node(&mut self, id: usize) {
+    pub fn delete_node(&mut self, id: NodeId) {
         self.nodes.retain(|n| n.get_id() != id);
         if self.rendered_id == id {
             self.rendered_id = 0
@@ -82,30 +82,30 @@ impl Network {
         self.get_node(self.rendered_id)
     }
 
-    pub fn get_node(&self, id: usize) -> Option<&Box<Node>> {
+    pub fn get_node(&self, id: NodeId) -> Option<&Box<Node>> {
         self.nodes.iter().find(|n| n.get_id() == id)
     }
 
-    pub fn get_node_mut(&mut self, id: usize) -> Option<&mut Box<Node>> {
+    pub fn get_node_mut(&mut self, id: NodeId) -> Option<&mut Box<Node>> {
         self.nodes.iter_mut().find(|n| n.get_id() == id)
     }
 
-    pub fn get_input_port(&self, id: usize, port_name: &str) -> Option<&Port> {
+    pub fn get_input_port(&self, id: NodeId, port_name: &str) -> Option<&Port> {
         let node = self.get_node(id)?;
         node.get_input(port_name)
     }
 
-    pub fn get_input_port_mut(&mut self, id: usize, port_name: &str) -> Option<&mut Port> {
+    pub fn get_input_port_mut(&mut self, id: NodeId, port_name: &str) -> Option<&mut Port> {
         let node = self.get_node_mut(id)?;
         node.get_input_mut(port_name)
     }
 
-    pub fn get_output_port(&self, id: usize, port_name: &str) -> Option<&Port> {
+    pub fn get_output_port(&self, id: NodeId, port_name: &str) -> Option<&Port> {
         let node = self.get_node(id)?;
         node.get_output(port_name)
     }
 
-    pub fn get_connection_with_input(&self, input_id: usize, input_port: &str) -> Option<&Connection> {
+    pub fn get_connection_with_input(&self, input_id: NodeId, input_port: &str) -> Option<&Connection> {
         self.connections.iter().find(|c| c.input_id == input_id && c.input_port == input_port)
     }
 
@@ -119,6 +119,6 @@ mod test {
     fn delete_node() {
         //let mut net = Network::new();
         //net.create_node("")
-        // pub fn new_node(id: usize, type_name: &str, x: i32, y: i32) -> Option<Box<Node>> {
+        // pub fn new_node(id: NodeId, type_name: &str, x: i32, y: i32) -> Option<Box<Node>> {
     }
 }

@@ -1,7 +1,7 @@
-use super::{Port, PortValue, PortDirection};
+use super::{NodeId, Port, PortValue, PortDirection};
 
 pub struct NodeData {
-    pub id: usize,
+    pub id: NodeId,
     pub name: String,
     pub x: i32,
     pub y: i32,
@@ -10,7 +10,7 @@ pub struct NodeData {
 }
 
 impl NodeData {
-    pub fn new(id: usize, name: &str, x: i32, y: i32) -> NodeData {
+    pub fn new(id: NodeId, name: &str, x: i32, y: i32) -> NodeData {
         NodeData {
             id,
             name: name.to_owned(),
@@ -51,7 +51,7 @@ pub trait Node {
     fn get_node_data_mut(& mut self) -> & mut NodeData;
     fn run(&mut self);
 
-    fn get_id(& self) -> usize { self.get_node_data().id }
+    fn get_id(& self) -> NodeId { self.get_node_data().id }
     fn get_name(& self) -> String { self.get_node_data().name.clone() }
     fn get_x(& self) -> i32 { self.get_node_data().x }
     fn get_y(& self) -> i32 { self.get_node_data().y }
@@ -61,14 +61,14 @@ pub trait Node {
     fn get_input_mut(&mut self, name: &str) -> Option<&mut Port> { self.get_node_data_mut().inputs.iter_mut().find(|p| p.name == name) }
     fn get_output(&self, name: &str) -> Option<&Port> { self.get_node_data().outputs.iter().find(|p| p.name == name) }
     fn get_output_mut(&mut self, name: &str) -> Option<&mut Port> { self.get_node_data_mut().outputs.iter_mut().find(|p| p.name == name) }
-    fn get_float_output(&self, name: &str, index: usize) -> Option<f32> {
+    fn get_float_output(&self, name: &str, index: NodeId) -> Option<f32> {
         match self.get_output(name) {
             None => None,
             Some(port) => Some(port.get_float(index))
         }
     }
 
-    fn set_float(&mut self, name: &str, index: usize, v: f32) {
+    fn set_float(&mut self, name: &str, index: NodeId, v: f32) {
         match self.get_input_mut(name) {
             None => {},
             Some(input) => input.set_float(index, v)
@@ -87,7 +87,7 @@ pub trait Node {
             }
         }
     }
-    fn get_max_input_size(&self) -> usize {
+    fn get_max_input_size(&self) -> NodeId {
         self.get_node_data().inputs.iter().fold(0, |acc, p| if acc > p.size() { acc } else { p.size() })
     }
 }
