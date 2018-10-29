@@ -1,4 +1,4 @@
-use super::{NodeId, Port, PortDirection, PortIndex, PortValue, RenderContext};
+use super::{NodeId, Port, PortDirection, PortIndex, RenderContext};
 
 pub struct NodeData {
     pub id: NodeId,
@@ -106,33 +106,12 @@ pub trait Node {
             .find(|p| p.name == name)
     }
 
-    // fn get_float_output(&self, port: PortIndex, index: usize) -> Option<f32> {
-    //     match self.get_output(port) {
-    //         None => None,
-    //         Some(port) => Some(port.get_float(index)),
-    //     }
-    // }
-
     fn set_float(&mut self, name: &str, index: usize, v: f32) {
         match self.get_input_by_name_mut(name) {
             None => {}
             Some(input) => input.set_float(index, v),
         }
     }
-
-    // fn set_output_floats(&mut self, name: &str, values: &Vec<f32>) {
-    //     let out = self.get_output_mut(name);
-    //     match out {
-    //         None => {}
-    //         Some(out) => {
-    //             let mut wrapped_values = Vec::new();
-    //             for v in values {
-    //                 wrapped_values.push(PortValue::Float(*v))
-    //             }
-    //             out.values = wrapped_values;
-    //         }
-    //     }
-    // }
 
     fn get_max_input_size(&self) -> NodeId {
         self.get_node_data()
@@ -141,23 +120,3 @@ pub trait Node {
             .fold(0, |acc, p| if acc > p.size() { acc } else { p.size() })
     }
 }
-
-// pub struct Node {
-//     pub name: String,
-//     pub ports: Vec<Port>,
-//     pub op: Box<Op>,
-// }
-
-// impl Node {
-//     pub fn new(name: &str, op: Box<Op>) -> Node {
-//         let mut ports = Vec::new();
-//         ports.push(Port::new_input("a", PortKind::Float));
-//         ports.push(Port::new_input("b", PortKind::Float));
-//         ports.push(Port::new_output("out", PortKind::Float));
-//         Node {
-//             name: name.to_owned(),
-//             ports,
-//             op,
-//         }
-//     }
-// }

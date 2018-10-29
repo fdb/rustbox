@@ -7,7 +7,7 @@ mod render_context;
 pub use self::connection::Connection;
 pub use self::network::Network;
 pub use self::node::{Node, NodeData};
-pub use self::port::{Port, PortDirection, PortKind, PortValue};
+pub use self::port::{Port, PortDirection, PortKind, PortSlice};
 pub use self::render_context::RenderContext;
 
 pub type NodeId = usize;
@@ -71,22 +71,14 @@ impl Node for AddNode {
     fn render(&self, ctx: &mut RenderContext) {
         let max_size = ctx.get_max_input_size(self.get_id());
         let mut results = Vec::with_capacity(max_size);
-        let in_a = ctx.get_input_values(self.get_id(), 0);
-        let in_b = ctx.get_input_values(self.get_id(), 1);
-
-        //let in_a = self.get_input(0).unwrap();
-        //let in_b = self.get_input(1).unwrap();
-        //let out = self.get_output_mut("out").unwrap();
-        //out.ensure_size(max_size);
+        let in_a = ctx.get_input_slice(self.get_id(), 0);
+        let in_b = ctx.get_input_slice(self.get_id(), 1);
         for i in 0..max_size {
-            //let a = in_a.get_float(i);
-            //let b = in_b.get_float(i);
-            let a = in_a[i % in_a.len()].to_float();
-            let b = in_b[i % in_b.len()].to_float();
-            results.push(PortValue::Float(a + b));
-            //out.set_float(i, a + b);
+            let a = in_a.get_float(i);
+            let b = in_b.get_float(i);
+            results.push(a + b);
         }
-        ctx.set_output_values(self.get_id(), 0, results);
+        ctx.set_output_floats(self.get_id(), 0, results);
     }
 }
 
@@ -119,9 +111,9 @@ impl Node for ParseFloatsNode {
         let mut results = Vec::new();
         for part in s.split(';') {
             let v = part.parse::<f32>().unwrap();
-            results.push(PortValue::Float(v));
+            results.push(v);
         }
-        ctx.set_output_values(self.get_id(), 0, results);
+        ctx.set_output_floats(self.get_id(), 0, results);
     }
 }
 
@@ -141,7 +133,7 @@ mod test {
     fn render_single_node(
         node: Box<Node>,
         output_port_index: PortIndex,
-    ) -> Result<Vec<PortValue>, &'static str> {
+    ) -> Result<PortSlice, &'static str> {
         let node_id = node.get_id();
         let mut network = Network::new();
         network.nodes.push(node);
@@ -150,7 +142,7 @@ mod test {
         // FIXME: ctx.render()
         network.render(&mut ctx)?;
         Ok(ctx
-            .get_output_values(node_id, output_port_index)
+            .get_output_slice(node_id, output_port_index)
             .unwrap()
             .clone())
     }
@@ -170,22 +162,22 @@ mod test {
         node.set_float("b", 1, 500.0);
         assert_eq!(node.get_max_input_size(), 2);
         let results = render_single_node(node, 0).unwrap();
-        assert_eq!(results.len(), 2);
-        assert_eq!(results[0].to_float(), 8.0);
-        assert_eq!(results[1].to_float(), 800.0);
+        assert_eq!(results.size(), 2);
+        assert_eq!(results.get_float(0), 8.0);
+        assert_eq!(results.get_float(1), 800.0);
     }
 
     #[test]
     fn test_parse_floats() {
         let node = new_node(1, "Parse Floats", 0, 0).unwrap();
         let results = render_single_node(node, 0).unwrap();
-        assert_eq!(results.len(), 5);
-        assert_eq!(results[0].to_float(), 1.0);
-        assert_eq!(results[1].to_float(), 2.0);
-        assert_eq!(results[2].to_float(), 3.0);
-        assert_eq!(results[3].to_float(), 4.0);
-        assert_eq!(results[4].to_float(), 5.0);
-        // assert_eq!(results[5].to_float(), 1.0); // Output wraps // FIXME use slice here
+        assert_eq!(results.size(), 5);
+        assert_eq!(results.get_float(0), 1.0);
+        assert_eq!(results.get_float(1), 2.0);
+        assert_eq!(results.get_float(2), 3.0);
+        assert_eq!(results.get_float(3), 4.0);
+        assert_eq!(results.get_float(4), 5.0);
+        assert_eq!(results.get_float(5), 1.0);
     }
 
     #[test]
@@ -201,9 +193,9 @@ mod test {
         network.rendered_id = 2;
         let mut ctx = RenderContext::new(&network);
         network.render(&mut ctx).unwrap();
-        let values = ctx.get_output_values(network.rendered_id, 0).unwrap();
-        assert_eq!(values.len(), 5);
-        assert_eq!(values[0].to_float(), 101.0);
-        assert_eq!(values[4].to_float(), 105.0);
+        let slice = ctx.get_output_slice(network.rendered_id, 0).unwrap();
+        assert_eq!(slice.size(), 5);
+        assert_eq!(slice.get_float(0), 101.0);
+        assert_eq!(slice.get_float(4), 105.0);
     }
 }

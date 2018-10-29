@@ -1,10 +1,10 @@
-use super::{Network, NodeId, Port, PortIndex, PortValue};
+use super::{Network, NodeId, Port, PortIndex, PortSlice};
 use std::collections::HashMap;
 
 pub struct RenderContext<'a> {
     pub network: &'a Network,
-    pub inputs: HashMap<(NodeId, PortIndex), Vec<PortValue>>,
-    pub outputs: HashMap<(NodeId, PortIndex), Vec<PortValue>>,
+    pub inputs: HashMap<(NodeId, PortIndex), PortSlice>,
+    pub outputs: HashMap<(NodeId, PortIndex), PortSlice>,
 }
 
 impl<'a> RenderContext<'a> {
@@ -17,33 +17,18 @@ impl<'a> RenderContext<'a> {
     }
 
     pub fn set_output_floats(&mut self, id: NodeId, output_port: PortIndex, values: Vec<f32>) {
-        self.outputs.insert(
-            (id, output_port),
-            values.iter().map(|v| PortValue::Float(*v)).collect(),
-        );
+        self.outputs
+            .insert((id, output_port), PortSlice::new_float_slice(values));
     }
 
-    pub fn set_output_values(
-        &mut self,
-        id: NodeId,
-        output_port: PortIndex,
-        values: Vec<PortValue>,
-    ) {
-        self.outputs.insert((id, output_port), values);
-    }
-
-    pub fn get_output_values(
-        &mut self,
-        id: NodeId,
-        output_port: PortIndex,
-    ) -> Option<&Vec<PortValue>> {
+    pub fn get_output_slice(&mut self, id: NodeId, output_port: PortIndex) -> Option<&PortSlice> {
         self.outputs.get(&(id, output_port))
     }
 
-    pub fn get_input_values(&self, id: NodeId, input_port: PortIndex) -> &Vec<PortValue> {
+    pub fn get_input_slice(&self, id: NodeId, input_port: PortIndex) -> &PortSlice {
         self.inputs
             .get(&(id, input_port))
-            .unwrap_or_else(|| &self.network.get_input_port(id, input_port).unwrap().values)
+            .unwrap_or_else(|| &self.network.get_input_port(id, input_port).unwrap().slice)
     }
 
     pub fn clone_output_to_input(
@@ -78,7 +63,7 @@ impl<'a> RenderContext<'a> {
     pub fn get_input_size(&self, id: NodeId, port: &Port, port_index: PortIndex) -> usize {
         self.inputs
             .get(&(id, port_index))
-            .unwrap_or_else(|| &port.values)
-            .len()
+            .unwrap_or_else(|| &port.slice)
+            .size()
     }
 }
