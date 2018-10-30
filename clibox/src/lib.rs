@@ -106,7 +106,7 @@ impl Node for ParseFloatsNode {
     fn render(&self, ctx: &mut RenderContext) {
         let max_size = self.get_max_input_size();
         assert_eq!(max_size, 1); // FIXME: support more than one string and combine them.
-        let in_s = self.get_input(0).unwrap();
+        let in_s = ctx.get_input_slice(self.get_id(), 0);
         let s = in_s.get_string(0);
         let mut results = Vec::new();
         for part in s.split(';') {
