@@ -1,4 +1,4 @@
-use super::{Connection, Node, NodeId, Port, PortIndex, RenderContext};
+use crate::{Connection, Node, NodeId, Port, PortIndex, RenderContext};
 
 pub struct Network {
     pub rendered_id: NodeId,

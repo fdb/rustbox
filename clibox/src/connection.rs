@@ -1,4 +1,4 @@
-use super::{NodeId, PortIndex};
+use crate::{NodeId, PortIndex};
 
 pub struct Connection {
     pub output_id: NodeId,

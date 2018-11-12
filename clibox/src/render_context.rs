@@ -1,4 +1,4 @@
-use super::{Network, NodeId, Port, PortIndex, PortSlice};
+use crate::{Network, NodeId, Port, PortIndex, PortSlice};
 use std::collections::HashMap;
 
 pub struct RenderContext<'n> {
@@ -23,6 +23,10 @@ impl<'n, 'f> RenderContext<'n> {
 
     pub fn get_output_slice(&mut self, id: NodeId, output_port: PortIndex) -> Option<&PortSlice> {
         self.outputs.get(&(id, output_port))
+    }
+
+    pub fn set_output_slice(&mut self, id: NodeId, output_port: PortIndex, slice: PortSlice) {
+        self.outputs.insert((id, output_port), slice);
     }
 
     pub fn get_input_slice(&self, id: NodeId, input_port: PortIndex) -> &PortSlice {

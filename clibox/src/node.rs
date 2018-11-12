@@ -1,4 +1,4 @@
-use super::{Function, NodeId, NullFunction, Port, PortDirection, PortIndex, RenderContext};
+use crate::{Function, NodeId, NullFunction, Port, PortDirection, PortIndex, RenderContext};
 
 pub struct Node {
     pub id: NodeId,
@@ -87,6 +87,10 @@ impl Node {
             Some(input) => input.set_float(index, v),
         }
     }
+
+    // pub fn set_output_slice(&mut self, index: PortIndex, slice: PortSlice) {
+    //     self.outputs[index].slice = slice;
+    // }
 
     pub fn get_max_input_size(&self) -> usize {
         self.inputs
