@@ -2,7 +2,7 @@ use super::{Connection, Node, NodeId, Port, PortIndex, RenderContext};
 
 pub struct Network {
     pub rendered_id: NodeId,
-    pub nodes: Vec<Box<Node>>,
+    pub nodes: Vec<Node>,
     pub connections: Vec<Connection>,
 }
 
@@ -46,7 +46,7 @@ impl Network {
         if node.is_none() {
             return Err("No rendered node.");
         }
-        self.render_node(context, node.unwrap().get_id())?;
+        self.render_node(context, node.unwrap().id)?;
         Ok(())
     }
 
@@ -57,7 +57,7 @@ impl Network {
             if node.is_none() {
                 return Err("Could not find node.");
             }
-            node.unwrap().get_inputs()
+            &node.unwrap().inputs
         };
         for port_index in 0..inputs.len() {
             self.render_input_port(context, id, port_index)?;
@@ -99,23 +99,23 @@ impl Network {
     }
 
     pub fn delete_node(&mut self, id: NodeId) {
-        self.nodes.retain(|n| n.get_id() != id);
+        self.nodes.retain(|n| n.id != id);
         if self.rendered_id == id {
             self.rendered_id = 0
         }
         // FIXME: also delete the connections
     }
 
-    pub fn get_rendered_node(&self) -> Option<&Box<Node>> {
+    pub fn get_rendered_node(&self) -> Option<&Node> {
         self.get_node(self.rendered_id)
     }
 
-    pub fn get_node(&self, id: NodeId) -> Option<&Box<Node>> {
-        self.nodes.iter().find(|n| n.get_id() == id)
+    pub fn get_node(&self, id: NodeId) -> Option<&Node> {
+        self.nodes.iter().find(|n| n.id == id)
     }
 
-    pub fn get_node_mut(&mut self, id: NodeId) -> Option<&mut Box<Node>> {
-        self.nodes.iter_mut().find(|n| n.get_id() == id)
+    pub fn get_node_mut(&mut self, id: NodeId) -> Option<&mut Node> {
+        self.nodes.iter_mut().find(|n| n.id == id)
     }
 
     pub fn get_input_port(&self, id: NodeId, input_port: PortIndex) -> Option<&Port> {

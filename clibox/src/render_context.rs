@@ -1,14 +1,14 @@
 use super::{Network, NodeId, Port, PortIndex, PortSlice};
 use std::collections::HashMap;
 
-pub struct RenderContext<'a> {
-    pub network: &'a Network,
+pub struct RenderContext<'n> {
+    pub network: &'n Network,
     pub inputs: HashMap<(NodeId, PortIndex), PortSlice>,
     pub outputs: HashMap<(NodeId, PortIndex), PortSlice>,
 }
 
-impl<'a> RenderContext<'a> {
-    pub fn new(network: &'a Network) -> RenderContext<'a> {
+impl<'n, 'f> RenderContext<'n> {
+    pub fn new(network: &'n Network) -> RenderContext<'n> {
         RenderContext {
             network,
             inputs: HashMap::new(),
@@ -50,7 +50,7 @@ impl<'a> RenderContext<'a> {
         }
         let node = node.unwrap();
 
-        node.get_inputs().iter().enumerate().fold(0, |acc, (i, p)| {
+        node.inputs.iter().enumerate().fold(0, |acc, (i, p)| {
             let size = self.get_input_size(id, p, i);
             if acc > size {
                 acc

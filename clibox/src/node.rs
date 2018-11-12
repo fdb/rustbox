@@ -1,19 +1,21 @@
-use super::{NodeId, Port, PortDirection, PortIndex, RenderContext};
+use super::{Function, NodeId, NullFunction, Port, PortDirection, PortIndex, RenderContext};
 
-pub struct NodeData {
+pub struct Node {
     pub id: NodeId,
     pub name: String,
+    pub function: Box<Function>,
     pub x: i32,
     pub y: i32,
     pub inputs: Vec<Port>,
     pub outputs: Vec<Port>,
 }
 
-impl NodeData {
-    pub fn new(id: NodeId, name: &str, x: i32, y: i32) -> NodeData {
-        NodeData {
+impl Node {
+    pub fn new(id: NodeId, name: &str, x: i32, y: i32) -> Node {
+        Node {
             id,
             name: name.to_owned(),
+            function: Box::new(NullFunction {}),
             x,
             y,
             inputs: Vec::new(),
@@ -50,72 +52,44 @@ impl NodeData {
         self.inputs
             .push(Port::new_string_port(name, vec![], PortDirection::Out));
     }
-}
 
-pub trait Node {
-    fn get_node_data(&self) -> &NodeData;
-    fn get_node_data_mut(&mut self) -> &mut NodeData;
-    fn render(&self, ctx: &mut RenderContext);
-
-    fn get_id(&self) -> NodeId {
-        self.get_node_data().id
-    }
-    fn get_name(&self) -> String {
-        self.get_node_data().name.clone()
-    }
-    fn get_x(&self) -> i32 {
-        self.get_node_data().x
-    }
-    fn get_y(&self) -> i32 {
-        self.get_node_data().y
-    }
-    fn get_inputs(&self) -> &Vec<Port> {
-        &self.get_node_data().inputs
-    }
-    fn get_outputs(&self) -> &Vec<Port> {
-        &self.get_node_data().outputs
+    pub fn render(&self, ctx: &mut RenderContext) {
+        self.function.render(&self, ctx)
     }
 
-    fn get_input(&self, index: PortIndex) -> Option<&Port> {
-        self.get_node_data().inputs.get(index)
+    pub fn get_input(&self, index: PortIndex) -> Option<&Port> {
+        self.inputs.get(index)
     }
 
-    fn get_input_by_name(&self, name: &str) -> Option<&Port> {
-        self.get_node_data().inputs.iter().find(|p| p.name == name)
+    pub fn get_input_by_name(&self, name: &str) -> Option<&Port> {
+        self.inputs.iter().find(|p| p.name == name)
     }
 
-    fn get_input_by_name_mut(&mut self, name: &str) -> Option<&mut Port> {
-        self.get_node_data_mut()
-            .inputs
-            .iter_mut()
-            .find(|p| p.name == name)
+    pub fn get_input_by_name_mut(&mut self, name: &str) -> Option<&mut Port> {
+        self.inputs.iter_mut().find(|p| p.name == name)
     }
 
-    fn get_output_by_name(&self, name: &str) -> Option<&Port> {
-        self.get_node_data().outputs.iter().find(|p| p.name == name)
+    pub fn get_output_by_name(&self, name: &str) -> Option<&Port> {
+        self.outputs.iter().find(|p| p.name == name)
     }
 
-    fn get_output(&self, index: PortIndex) -> Option<&Port> {
-        self.get_node_data().outputs.get(index)
+    pub fn get_output(&self, index: PortIndex) -> Option<&Port> {
+        self.outputs.get(index)
     }
 
-    fn get_output_mut(&mut self, name: &str) -> Option<&mut Port> {
-        self.get_node_data_mut()
-            .outputs
-            .iter_mut()
-            .find(|p| p.name == name)
+    pub fn get_output_mut(&mut self, name: &str) -> Option<&mut Port> {
+        self.outputs.iter_mut().find(|p| p.name == name)
     }
 
-    fn set_float(&mut self, name: &str, index: usize, v: f32) {
+    pub fn set_float(&mut self, name: &str, index: usize, v: f32) {
         match self.get_input_by_name_mut(name) {
             None => {}
             Some(input) => input.set_float(index, v),
         }
     }
 
-    fn get_max_input_size(&self) -> NodeId {
-        self.get_node_data()
-            .inputs
+    pub fn get_max_input_size(&self) -> usize {
+        self.inputs
             .iter()
             .fold(0, |acc, p| if acc > p.size() { acc } else { p.size() })
     }
