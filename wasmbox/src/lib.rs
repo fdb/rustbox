@@ -22,7 +22,6 @@ pub enum PlugKind {
     String,
 }
 
-#[wasm_bindgen]
 pub enum PlugValue {
     Int(i32),
     Float(f32),
@@ -30,7 +29,7 @@ pub enum PlugValue {
 }
 
 #[wasm_bindgen]
-struct Plug {
+pub struct Plug {
     pub name: String,
     pub value: PlugValue,
     pub polarity: PlugPolarity,
@@ -66,7 +65,7 @@ impl Plug {
 
 
 #[wasm_bindgen]
-struct Node {
+pub struct Node {
     pub name: String,
     pub plugs: Vec<Plug>,
 }
