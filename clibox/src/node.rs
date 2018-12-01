@@ -88,6 +88,13 @@ impl Node {
         }
     }
 
+    pub fn set_string(&mut self, name: &str, index: usize, v: &str) {
+        match self.get_input_by_name_mut(name) {
+            None => {}
+            Some(input) => input.set_string(index, v),
+        }
+    }
+
     // pub fn set_output_slice(&mut self, index: PortIndex, slice: PortSlice) {
     //     self.outputs[index].slice = slice;
     // }

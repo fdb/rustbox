@@ -122,4 +122,29 @@ mod test {
         assert_eq!(slice.get_float(0), 101.0);
         assert_eq!(slice.get_float(4), 105.0);
     }
+
+    #[test]
+    fn test_list_matching() {
+        let mut network = Network::new();
+        let mut parse_floats_node_1 = new_node(1, "Parse Floats", 0, 0).unwrap();
+        parse_floats_node_1.set_string("s", 0, "1;2;3;4;5");
+        network.nodes.push(parse_floats_node_1);
+        let mut parse_floats_node_2 = new_node(2, "Parse Floats", 1, 0).unwrap();
+        parse_floats_node_2.set_string("s", 0, "100;200");
+        network.nodes.push(parse_floats_node_2);
+        let mut add_node = new_node(3, "Add", 0, 1).unwrap();
+        network.nodes.push(add_node);
+        network.connections.push(Connection::new(1, 0, 3, 0));
+        network.connections.push(Connection::new(2, 0, 3, 1));
+        network.rendered_id = 3;
+        let mut ctx = RenderContext::new(&network);
+        network.render(&mut ctx).unwrap();
+        let slice = ctx.get_output_slice(network.rendered_id, 0).unwrap();
+        assert_eq!(slice.size(), 5);
+        assert_eq!(slice.get_float(0), 1.0 + 100.0);
+        assert_eq!(slice.get_float(1), 2.0 + 200.0);
+        assert_eq!(slice.get_float(2), 3.0 + 100.0);
+        assert_eq!(slice.get_float(3), 4.0 + 200.0);
+        assert_eq!(slice.get_float(4), 5.0 + 100.0);
+    }
 }
