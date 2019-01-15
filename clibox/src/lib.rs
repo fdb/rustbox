@@ -132,7 +132,7 @@ mod test {
         let mut parse_floats_node_2 = new_node(2, "Parse Floats", 1, 0).unwrap();
         parse_floats_node_2.set_string("s", 0, "100;200");
         network.nodes.push(parse_floats_node_2);
-        let mut add_node = new_node(3, "Add", 0, 1).unwrap();
+        let add_node = new_node(3, "Add", 0, 1).unwrap();
         network.nodes.push(add_node);
         network.connections.push(Connection::new(1, 0, 3, 0));
         network.connections.push(Connection::new(2, 0, 3, 1));
