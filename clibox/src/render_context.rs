@@ -18,7 +18,7 @@ impl<'n, 'f> RenderContext<'n> {
 
     pub fn set_output_floats(&mut self, id: NodeId, output_port: PortIndex, values: Vec<f32>) {
         self.outputs
-            .insert((id, output_port), PortSlice::new_float_slice(values));
+            .insert((id, output_port), PortSlice::new_float(values));
     }
 
     pub fn get_output_slice(&mut self, id: NodeId, output_port: PortIndex) -> Option<&PortSlice> {
