@@ -1,0 +1,16 @@
+{
+  "name": "net1",
+  "nodes":[
+    {"name":"int1","x":1,"y":1,"kind":"Int","values":{"v":{"Int":5}}},
+    {"name":"int2","x":2,"y":1,"kind":"Int","values":{"v":{"Int":3}}},
+    {"name":"add1","x":1,"y":3,"kind":"Add", "values":{}},
+    {"name":"frame1","x":2,"y":3,"kind":"Frame","values":{}},
+    {"name":"add2","x":1,"y":5,"kind":"Add","values":{}}
+  ],
+  "connections": [
+    {"output": "int1", "input": "add1", "port": "a" },
+    {"output": "int2", "input": "add1", "port": "b" },
+    {"output": "add1", "input": "add2", "port": "a" },
+    {"output": "frame1", "input": "add2", "port": "b" }
+  ]
+}
