@@ -1,7 +1,7 @@
 mod network;
 mod svg;
 
-use crate::network::{NodeKind, Node, Network, port_index_for_node_kind, inputs_for_node_kind};
+use crate::network::Network;
 use crate::svg::network_to_svg;
 use std::fs;
 use std::fs::File;

@@ -1,4 +1,3 @@
-
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
@@ -14,6 +13,29 @@ pub enum NodeKind {
     Negate,
     Switch,
     Frame,
+}
+
+impl NodeKind {
+    pub fn inputs(&self) -> Vec<String> {
+        match self {
+            NodeKind::Int => vec!["v".to_owned()],
+            NodeKind::Add => vec!["a".to_owned(), "b".to_owned()],
+            NodeKind::Negate => vec!["v".to_owned()],
+            NodeKind::Switch => vec![
+                "index".to_owned(),
+                "in0".to_owned(),
+                "in1".to_owned(),
+                "in2".to_owned(),
+                "in3".to_owned(),
+            ],
+            NodeKind::Frame => vec![],
+        }
+    }
+
+    pub fn port_index(&self, port: &str) -> Option<usize> {
+        let inputs = self.inputs();
+        inputs.iter().position(|s| s == port)
+    }
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -51,7 +73,8 @@ impl Network {
     // }
 
     pub fn input_nodes<'a>(&'a self, node: &'a Node) -> Vec<&Node> {
-        self.connections.iter()
+        self.connections
+            .iter()
             .filter(|&conn| conn.input == node.name)
             .map(|conn| self.find_node_by_name(&conn.output).unwrap())
             .collect()
@@ -59,7 +82,9 @@ impl Network {
 
     pub fn is_time_dependent(&self, node: &Node) -> bool {
         // If I am time-dependent myself, the result will always be true.
-        if is_time_dependent(node.kind) { return true; }
+        if is_time_dependent(node.kind) {
+            return true;
+        }
         // If my input connections are time-dependent, I am as well.
         for input_node in self.input_nodes(node) {
             if self.is_time_dependent(input_node) {
@@ -70,30 +95,9 @@ impl Network {
     }
 }
 
-pub fn port_index_for_node_kind(kind: NodeKind, port: &str) -> usize {
-    let inputs = inputs_for_node_kind(kind);
-    inputs.iter().position(|s| s == port).unwrap_or(0)
-}
-
-pub fn inputs_for_node_kind(kind: NodeKind) -> Vec<String> {
-    match kind {
-        NodeKind::Int => vec!["v".to_owned()],
-        NodeKind::Add => vec!["a".to_owned(), "b".to_owned()],
-        NodeKind::Negate => vec!["v".to_owned()],
-        NodeKind::Switch => vec![
-            "index".to_owned(),
-            "in0".to_owned(),
-            "in1".to_owned(),
-            "in2".to_owned(),
-            "in3".to_owned(),
-        ],
-        NodeKind::Frame => vec![],
-    }
-}
-
 pub fn is_time_dependent(kind: NodeKind) -> bool {
     match kind {
         NodeKind::Frame => true,
-        _ => false
+        _ => false,
     }
 }

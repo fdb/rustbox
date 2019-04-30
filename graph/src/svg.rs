@@ -1,6 +1,4 @@
-use crate::network::{
-    inputs_for_node_kind, is_time_dependent, port_index_for_node_kind, Network, Node, NodeKind,
-};
+use crate::network::{is_time_dependent, Network, Node};
 
 const SVG_ROW_WIDTH: i32 = 80;
 const SVG_COLUMN_HEIGHT: i32 = 20;
@@ -19,7 +17,7 @@ fn node_to_svg(network: &Network, node: &Node) -> String {
         r#"<text class="node__name" x="5" y="14" font-size="12">{}</text>"#,
         node.name
     );
-    let inputs = inputs_for_node_kind(node.kind);
+    let inputs = node.kind.inputs();
     for (index, _) in inputs.iter().enumerate() {
         s += &format!(
             r#"<rect class="node__rect" x="{}" y="0" width="{}" height="2" fill="black"/>"#,
@@ -67,7 +65,9 @@ pub fn network_to_svg(network: &Network) -> String {
             .iter()
             .find(|&node| node.name == conn.input)
             .unwrap();
-        let port_index = port_index_for_node_kind(input_node.kind, &conn.port);
+        let port_index = input_node.kind.port_index(&conn.port);
+        if port_index.is_none() { continue; }
+        let port_index = port_index.unwrap();
         s += &format!(
             r#"<line x1="{}" y1="{}" x2="{}" y2="{}" stroke="black"/>"#,
             output_node.x * SVG_ROW_WIDTH + 7,
