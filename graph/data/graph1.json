@@ -1,5 +1,6 @@
 {
   "name": "net1",
+  "rendered_node": "add2",
   "nodes":[
     {"name":"int1","x":1,"y":1,"kind":"Int","values":{"v":{"Int":5}}},
     {"name":"int2","x":2,"y":1,"kind":"Int","values":{"v":{"Int":3}}},

@@ -57,6 +57,7 @@ pub struct Connection {
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Network {
     pub name: String,
+    pub rendered_node: String,
     pub nodes: Vec<Node>,
     pub connections: Vec<Connection>,
 }
@@ -64,6 +65,10 @@ pub struct Network {
 impl Network {
     pub fn find_node_by_name(&self, name: &str) -> Option<&Node> {
         self.nodes.iter().find(|&node| node.name == name)
+    }
+
+    pub fn rendered_node(&self) -> Option<&Node> {
+        self.find_node_by_name(&self.rendered_node)
     }
 
     // pub fn input_nodes<'a>(&'a self, node: &'a Node) -> impl Iterator<Item = &'a Node> {

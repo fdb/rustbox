@@ -1,0 +1,1 @@
+pub const OP_END: u8 = 0xFF;

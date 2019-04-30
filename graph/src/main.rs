@@ -1,6 +1,9 @@
+mod compiler;
 mod network;
 mod svg;
+mod bytecode;
 
+use crate::compiler::compile_network;
 use crate::network::Network;
 use crate::svg::network_to_svg;
 use std::fs;
@@ -37,4 +40,6 @@ fn main() {
     // println!("{}", network_to_svg(&network));
 
     //serde_json::from_reader(rdr: R)
+
+    compile_network(&network).unwrap();
 }
