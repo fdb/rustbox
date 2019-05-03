@@ -66,7 +66,9 @@ pub fn network_to_svg(network: &Network) -> String {
             .find(|&node| node.name == conn.input)
             .unwrap();
         let port_index = input_node.kind.port_index(&conn.port);
-        if port_index.is_none() { continue; }
+        if port_index.is_none() {
+            continue;
+        }
         let port_index = port_index.unwrap();
         s += &format!(
             r#"<line x1="{}" y1="{}" x2="{}" y2="{}" stroke="black"/>"#,

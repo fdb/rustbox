@@ -85,6 +85,13 @@ impl Network {
             .collect()
     }
 
+    pub fn find_output_node(&self, node: &Node, input_port: &str) -> Option<&Node> {
+        self.connections
+            .iter()
+            .find(|&conn| conn.input == node.name && conn.port == input_port)
+            .map(|conn| self.find_node_by_name(&conn.output).unwrap())
+    }
+
     pub fn is_time_dependent(&self, node: &Node) -> bool {
         // If I am time-dependent myself, the result will always be true.
         if is_time_dependent(node.kind) {

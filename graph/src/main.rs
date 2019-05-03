@@ -1,9 +1,9 @@
+mod bytecode;
 mod compiler;
 mod network;
 mod svg;
-mod bytecode;
 
-use crate::compiler::compile_network;
+use crate::compiler::{compile_network, print_bytecode};
 use crate::network::Network;
 use crate::svg::network_to_svg;
 use std::fs;
@@ -41,5 +41,6 @@ fn main() {
 
     //serde_json::from_reader(rdr: R)
 
-    compile_network(&network).unwrap();
+    let result = compile_network(&network).unwrap();
+    print_bytecode(&result.bytecode);
 }
