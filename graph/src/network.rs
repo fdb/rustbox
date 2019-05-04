@@ -15,6 +15,31 @@ pub enum NodeKind {
     Frame,
 }
 
+impl From<u8> for NodeKind {
+    fn from(kind: u8) -> NodeKind {
+        match kind {
+            1 => NodeKind::Int,
+            2 => NodeKind::Add,
+            3 => NodeKind::Negate,
+            4 => NodeKind::Switch,
+            5 => NodeKind::Frame,
+            _ => panic!("Invalid NodeKind"),
+        }
+    }
+}
+
+impl Into<u8> for NodeKind {
+    fn into(self) -> u8 {
+        match self {
+            NodeKind::Int => 1,
+            NodeKind::Add => 2,
+            NodeKind::Negate => 3,
+            NodeKind::Switch => 4,
+            NodeKind::Frame => 5,
+        }
+    }
+}
+
 impl NodeKind {
     pub fn inputs(&self) -> Vec<String> {
         match self {

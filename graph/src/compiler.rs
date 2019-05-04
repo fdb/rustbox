@@ -12,8 +12,7 @@ impl ToByteCode for Value {
     fn to_bytecode(&self, bytecode: &mut Vec<u8>) {
         match self {
             Value::Int(v) => {
-                let mut v: [u8; 4] = unsafe { std::mem::transmute(*v) };
-                v.reverse();
+                let v: [u8; 4] = unsafe { std::mem::transmute(*v) };
                 bytecode.push(OP_CONST_I32);
                 bytecode.extend(v.iter());
             }
@@ -23,13 +22,7 @@ impl ToByteCode for Value {
 
 impl ToByteCode for NodeKind {
     fn to_bytecode(&self, bytecode: &mut Vec<u8>) {
-        let op = match self {
-            NodeKind::Int => 1,
-            NodeKind::Add => 2,
-            NodeKind::Negate => 3,
-            NodeKind::Switch => 4,
-            NodeKind::Frame => 5,
-        };
+        let op = (*self).into();
         bytecode.push(op);
     }
 }

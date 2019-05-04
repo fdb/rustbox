@@ -2,10 +2,12 @@ mod bytecode;
 mod compiler;
 mod network;
 mod svg;
+mod vm;
 
 use crate::compiler::{compile_network, print_bytecode};
 use crate::network::Network;
 use crate::svg::network_to_svg;
+use crate::vm::VM;
 use std::fs;
 use std::fs::File;
 
@@ -43,4 +45,8 @@ fn main() {
 
     let result = compile_network(&network).unwrap();
     print_bytecode(&result.bytecode);
+
+    let mut vm = VM::new(result.bytecode);
+    vm.run();
+    println!("STACK: {:?}", vm.stack);
 }
