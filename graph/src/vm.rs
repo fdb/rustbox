@@ -149,7 +149,7 @@ impl VM {
                     let kind = self.bytecode[self.ip];
                     self.ip += 1;
                     let kind = NodeKind::from(kind);
-                    self.call_node(kind);
+                    self.call_node(kind)?;
                 }
                 OP_END => return Ok(()),
                 _ => unimplemented!("Invalid instruction"),
