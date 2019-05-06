@@ -6,6 +6,7 @@ mod vm;
 
 use crate::compiler::{compile_network, print_bytecode};
 use crate::network::Network;
+use crate::network::Spread;
 use crate::svg::network_to_svg;
 use crate::vm::VM;
 use std::fs;
@@ -44,9 +45,19 @@ fn main() {
     //serde_json::from_reader(rdr: R)
 
     let result = compile_network(&network).unwrap();
+    println!("Bytecode: {:?}", result.bytecode);
     print_bytecode(&result.bytecode);
 
-    let mut vm = VM::new(result.bytecode);
-    vm.run();
+    let mut vm = VM::new(result.bytecode, result.constant_pool);
+    let result = vm.run();
+    if result.is_err() {
+        println!("ERROR: {:?}", result.unwrap_err().message);
+    }
     println!("STACK: {:?}", vm.stack);
+
+    // let spread = Spread::Int(vec![1, 2, 3, 4]);
+    // // spread.to_json
+    // let serialized = serde_json::to_string(&spread).unwrap();
+    // println!("{:?}", serialized);
+
 }

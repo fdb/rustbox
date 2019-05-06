@@ -1,24 +1,67 @@
 //! Compiles the network to bytecode.
 
 use crate::bytecode::*;
-use crate::network::{Network, Node, NodeKind, Value};
+use crate::network::{Network, Node, NodeKind, Spread, SpreadKind};
+use crate::vm::Value;
 use std::collections::HashMap;
 
 trait ToByteCode {
     fn to_bytecode(&self, bytecode: &mut Vec<u8>);
 }
 
-impl ToByteCode for Value {
+// impl ToByteCode for Value {
+//     fn to_bytecode(&self, bytecode: &mut Vec<u8>) {
+//         match self {
+//             Value::Int(v) => {
+//                 let v: [u8; 4] = unsafe { std::mem::transmute(*v) };
+//                 bytecode.push(OP_CONST_I32);
+//                 bytecode.extend(v.iter());
+//             }
+//         }
+//     }
+// }
+
+impl ToByteCode for i32 {
     fn to_bytecode(&self, bytecode: &mut Vec<u8>) {
-        match self {
-            Value::Int(v) => {
-                let v: [u8; 4] = unsafe { std::mem::transmute(*v) };
-                bytecode.push(OP_CONST_I32);
-                bytecode.extend(v.iter());
-            }
-        }
+        let v: [u8; 4] = unsafe { std::mem::transmute(*self) };
+        // bytecode.push(OP_CONST_I32);
+        bytecode.extend(v.iter());
     }
 }
+
+impl ToByteCode for f32 {
+    fn to_bytecode(&self, bytecode: &mut Vec<u8>) {
+        let v: [u8; 4] = unsafe { std::mem::transmute(*self) };
+        // bytecode.push(OP_CONST_F32);
+        bytecode.extend(v.iter());
+    }
+}
+
+// impl ToByteCode for Spread {
+//     fn to_bytecode(&self, bytecode: &mut Vec<u8>) {
+//         match self {
+//             Spread::Int(vals) => {
+//                 if vals.len() == 1 {
+//                     bytecode.push(OP_CONST_I32);
+//                     vals[0].to_bytecode(bytecode);
+//                 } else {
+//                     //bytecode.push(OP_SPREAD_I32);
+//                     //bytecode.push(1);
+//                 }
+//             }
+//             Spread::Float(vals) => {
+//                 if vals.len() == 1 {
+//                     bytecode.push(OP_CONST_F32);
+//                     vals[0].to_bytecode(bytecode);
+//                 } else {
+//                     //bytecode.push(OP_SPREAD_I32);
+//                     //bytecode.push(1);
+//                 }
+//             }
+//             Spread::String(vals) => {}
+//         }
+//     }
+// }
 
 impl ToByteCode for NodeKind {
     fn to_bytecode(&self, bytecode: &mut Vec<u8>) {
@@ -31,17 +74,22 @@ pub fn print_bytecode(bytecode: &Vec<u8>) {
     let mut index: usize = 0;
     loop {
         let op = bytecode[index];
+        index += 1;
         match op {
             OP_CONST_I32 => {
-                let x1 = bytecode[index + 1];
-                let x2 = bytecode[index + 2];
-                let x3 = bytecode[index + 3];
-                let x4 = bytecode[index + 4];
+                let x1 = bytecode[index + 0];
+                let x2 = bytecode[index + 1];
+                let x3 = bytecode[index + 2];
+                let x4 = bytecode[index + 3];
                 index += 4;
                 println!("OP_CONST_I32 {} {} {} {}", x1, x2, x3, x4);
             }
+            OP_DUP => {
+                println!("OP_DUP");
+            }
             OP_CALL_NODE => {
-                let kind = bytecode[index + 1];
+                let kind = bytecode[index];
+                index += 1;
                 let kind = match kind {
                     1 => NodeKind::Int,
                     2 => NodeKind::Add,
@@ -51,7 +99,18 @@ pub fn print_bytecode(bytecode: &Vec<u8>) {
                     x => panic!("Error unknown kind {}", x),
                 };
                 println!("OP_CALL {:?}", kind);
+            }
+            OP_SPREAD_NEW => {
+                let kind = bytecode[index];
                 index += 1;
+                let kind = SpreadKind::from(kind);
+                println!("OP_SPREAD_NEW {:?}", kind);
+            }
+            OP_SPREAD_STORE => {
+                println!("OP_SPREAD_STORE");
+            }
+            OP_SPREAD_LOAD => {
+                println!("OP_SPREAD_LOAD");
             }
             OP_END => {
                 println!("OP_END");
@@ -62,7 +121,6 @@ pub fn print_bytecode(bytecode: &Vec<u8>) {
                 break;
             }
         }
-        index += 1;
     }
 }
 
@@ -96,12 +154,14 @@ trait Visitor {
 
 pub struct CompiledNetwork {
     pub bytecode: Vec<u8>,
+    pub constant_pool: Vec<Value>,
 }
 
 impl CompiledNetwork {
     pub fn new() -> CompiledNetwork {
         CompiledNetwork {
             bytecode: Vec::new(),
+            constant_pool: Vec::new(),
         }
     }
 }
@@ -118,6 +178,7 @@ impl Visitor for LogNodeNamesVisitor {
 struct CodeGenVisitor {
     pub bytecode: Vec<u8>,
     pub labels: HashMap<String, usize>,
+    pub constant_pool: Vec<Value>,
 }
 
 impl CodeGenVisitor {
@@ -125,11 +186,87 @@ impl CodeGenVisitor {
         CodeGenVisitor {
             bytecode: Vec::new(),
             labels: HashMap::new(),
+            constant_pool: Vec::new(),
         }
     }
 
     pub fn mark_label(&mut self, label: String) {
         self.labels.insert(label, self.bytecode.len());
+    }
+
+        // We don't use usize since the constant pool can only take the size that we specify, which is bounded.
+    pub fn intern_string(&mut self, s: &str) -> i32 {
+        // Check if string is in the pool
+        let pos = self.constant_pool.iter().position(|v| if let Value::String(vs) = v { vs == s } else { false });
+        // If it is, return its position.
+        if let Some(pos)  = pos { return pos as i32;  }
+        // If not, place a copy in the constant pool.
+        self.constant_pool.push(Value::String(s.to_string()));
+        (self.constant_pool.len() - 1) as i32
+    }
+
+    pub fn push_const_i32(&mut self, v: i32) {
+        self.bytecode.push(OP_CONST_I32);
+        v.to_bytecode(&mut self.bytecode);
+    }
+
+    pub fn push_dup(&mut self) {
+        self.bytecode.push(OP_DUP);
+    }
+
+    /// Stack before:
+    /// - count
+    /// Stack after:
+    /// - spread ref
+    pub fn push_spread_new(&mut self, size: usize, kind: SpreadKind) {
+        // Push spread size
+        self.bytecode.push(OP_CONST_I32);
+        (size as i32).to_bytecode(&mut self.bytecode);
+        // Push spread creation + type
+        self.bytecode.push(OP_SPREAD_NEW);
+        self.bytecode.push(SpreadKind::Int.into());
+    }
+
+    /// This instruction assumes the spread ref is already on the stack.
+    pub fn push_spread_store_i32(&mut self, index: usize, v: i32) {
+        self.push_const_i32(index as i32);
+        self.push_const_i32(v);
+        self.bytecode.push(OP_SPREAD_STORE);
+    }
+
+    fn visit_spread(&mut self, spread: &Spread, _context: &mut CompilerContext) {
+        self.constant_pool.push(Value::Spread(spread.clone()));
+        let index = (self.constant_pool.len() - 1) as i32;
+        self.push_const_i32(index);
+        self.bytecode.push(OP_SPREAD_LOAD);
+        //OP_SPREAD_LOAD
+        //.to_bytecode(&mut self.bytecode);
+        //self.bytecode.
+    //     match spread {
+    //         Spread::Int(vals) => {
+    //             if vals.len() == 1 {
+    //                 self.push_const_i32(vals[0]);
+    //             } else {
+    //                 self.push_spread_new(vals.len(), SpreadKind::Int);
+    //                 // Store all values
+    //                 for (index, v) in vals.iter().enumerate() {
+    //                     // Duplicate reference to spread
+    //                     self.push_dup();
+    //                     self.push_spread_store_i32(index, *v);
+    //                 }
+    //                 // What's left on the stack is a reference to the spread.
+    //             }
+    //         }
+    //         Spread::Float(vals) => {
+    //             if vals.len() == 1 {
+    //                 self.bytecode.push(OP_CONST_F32);
+    //                 vals[0].to_bytecode(&mut self.bytecode);
+    //             } else {
+    //                 // FIXME: implement
+    //             }
+    //         }
+    //         Spread::String(vals) => if vals.len() == 1 {},
+    //     }
     }
 }
 
@@ -150,8 +287,8 @@ impl Visitor for CodeGenVisitor {
                             self.visit(output_node, context)?;
                         }
                         None => {
-                            let value = node.values.get(&input_port).unwrap();
-                            value.to_bytecode(&mut self.bytecode);
+                            let spread = node.values.get(&input_port).unwrap();
+                            self.visit_spread(spread, context);
                         }
                     }
                 }
@@ -183,6 +320,7 @@ pub fn compile_network(network: &Network) -> Result<CompiledNetwork, CompileErro
 
     let mut compiled_network = CompiledNetwork::new();
     compiled_network.bytecode.extend(code_gen_visitor.bytecode);
+    compiled_network.constant_pool = code_gen_visitor.constant_pool;
 
     Ok(compiled_network)
 }

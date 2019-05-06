@@ -2,8 +2,8 @@
   "name": "net1",
   "rendered_node": "add2",
   "nodes":[
-    {"name":"int1","x":1,"y":1,"kind":"Int","values":{"v":{"Int":5}}},
-    {"name":"int2","x":2,"y":1,"kind":"Int","values":{"v":{"Int":3}}},
+    {"name":"int1","x":1,"y":1,"kind":"Int","values":{"v":{"Int":[100, 200]}}},
+    {"name":"int2","x":2,"y":1,"kind":"Int","values":{"v":{"Int":[3]}}},
     {"name":"add1","x":1,"y":3,"kind":"Add", "values":{}},
     {"name":"frame1","x":2,"y":3,"kind":"Frame","values":{}},
     {"name":"add2","x":1,"y":5,"kind":"Add","values":{}}

@@ -1,9 +1,39 @@
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
-#[derive(Serialize, Deserialize, Debug)]
-pub enum Value {
-    Int(i32),
+#[derive(Debug, Clone, Copy)]
+pub enum SpreadKind {
+    Int,
+    Float,
+    String,
+}
+
+impl From<u8> for SpreadKind {
+    fn from(kind: u8) -> SpreadKind {
+        match kind {
+            1 => SpreadKind::Int,
+            2 => SpreadKind::Float,
+            3 => SpreadKind::String,
+            _ => panic!("Invalid SpreadKind {}", kind),
+        }
+    }
+}
+
+impl Into<u8> for SpreadKind {
+    fn into(self) -> u8 {
+        match self {
+            SpreadKind::Int => 1,
+            SpreadKind::Float => 2,
+            SpreadKind::String => 3,
+        }
+    }
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub enum Spread {
+    Int(Vec<i32>),
+    Float(Vec<f32>),
+    String(Vec<String>),
 }
 
 #[derive(Serialize, Deserialize, Debug, Copy, Clone)]
@@ -69,7 +99,7 @@ pub struct Node {
     pub x: i32,
     pub y: i32,
     pub kind: NodeKind,
-    pub values: HashMap<String, Value>,
+    pub values: HashMap<String, Spread>,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
