@@ -190,11 +190,13 @@ impl VM {
                 // }
             }
             NodeKind::Negate => {
-                let a = self.stack.pop().unwrap();
-                if let Value::Int(ia) = a {
-                    let result = -ia;
-                    self.stack.push(Value::Int(result));
+                let a = self.pop_value()?;
+                let max_size = a.len();
+                let mut results = Vec::with_capacity(max_size);
+                for i in 0..max_size {
+                    results.push(-a.get_int(i));
                 }
+                self.stack.push(Value::Spread(Spread::Int(results)));
             }
             NodeKind::Switch => {
                 unimplemented!();
