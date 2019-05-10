@@ -225,6 +225,11 @@ impl CodeGenVisitor {
         v.to_bytecode(&mut self.bytecode);
     }
 
+    pub fn push_const_f32(&mut self, v: f32) {
+        self.bytecode.push(OP_CONST_F32);
+        v.to_bytecode(&mut self.bytecode);
+    }
+
     pub fn push_dup(&mut self) {
         self.bytecode.push(OP_DUP);
     }
@@ -250,39 +255,16 @@ impl CodeGenVisitor {
     // }
 
     fn visit_value(&mut self, value: &Value, _context: &mut CompilerContext) {
-        // FIXME: For singular int / float values this is overkill. Generate different bytecode.
-        self.constant_pool.push(value.clone());
-        let index = (self.constant_pool.len() - 1) as i32;
-        self.push_const_i32(index);
-        self.bytecode.push(OP_VALUE_LOAD);
-        //OP_SPREAD_LOAD
-        //.to_bytecode(&mut self.bytecode);
-        //self.bytecode.
-        //     match spread {
-        //         Spread::Int(vals) => {
-        //             if vals.len() == 1 {
-        //                 self.push_const_i32(vals[0]);
-        //             } else {
-        //                 self.push_spread_new(vals.len(), SpreadKind::Int);
-        //                 // Store all values
-        //                 for (index, v) in vals.iter().enumerate() {
-        //                     // Duplicate reference to spread
-        //                     self.push_dup();
-        //                     self.push_spread_store_i32(index, *v);
-        //                 }
-        //                 // What's left on the stack is a reference to the spread.
-        //             }
-        //         }
-        //         Spread::Float(vals) => {
-        //             if vals.len() == 1 {
-        //                 self.bytecode.push(OP_CONST_F32);
-        //                 vals[0].to_bytecode(&mut self.bytecode);
-        //             } else {
-        //                 // FIXME: implement
-        //             }
-        //         }
-        //         Spread::String(vals) => if vals.len() == 1 {},
-        //     }
+        match value {
+            Value::Int(v) => self.push_const_i32(*v),
+            Value::Float(v) => self.push_const_f32(*v),
+            _ => {
+                self.constant_pool.push(value.clone());
+                let index = (self.constant_pool.len() - 1) as i32;
+                self.push_const_i32(index);
+                self.bytecode.push(OP_VALUE_LOAD);
+            }
+        }
     }
 }
 
