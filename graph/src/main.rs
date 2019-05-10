@@ -3,6 +3,7 @@ mod compiler;
 mod network;
 mod svg;
 mod vm;
+mod value;
 
 use crate::compiler::{compile_network, print_bytecode};
 use crate::network::Network;
