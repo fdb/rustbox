@@ -1,8 +1,8 @@
 //! Compiles the network to bytecode.
 
 use crate::bytecode::*;
-use crate::network::{Network, Node, NodeKind, Spread, SpreadKind};
-use crate::vm::Value;
+use crate::network::{Network, Node, NodeKind};
+use crate::value::{Value, ValueKind};
 use std::collections::HashMap;
 
 trait ToByteCode {
@@ -100,17 +100,17 @@ pub fn print_bytecode(bytecode: &Vec<u8>) {
                 };
                 println!("OP_CALL {:?}", kind);
             }
-            OP_SPREAD_NEW => {
-                let kind = bytecode[index];
-                index += 1;
-                let kind = SpreadKind::from(kind);
-                println!("OP_SPREAD_NEW {:?}", kind);
-            }
-            OP_SPREAD_STORE => {
-                println!("OP_SPREAD_STORE");
-            }
-            OP_SPREAD_LOAD => {
-                println!("OP_SPREAD_LOAD");
+            // OP_VALUE_NEW => {
+            //     let kind = bytecode[index];
+            //     index += 1;
+            //     let kind = ValueKind::from(kind);
+            //     println!("OP_SPREAD_NEW {:?}", kind);
+            // }
+            // OP_SPREAD_STORE => {
+            //     println!("OP_SPREAD_STORE");
+            // }
+            OP_VALUE_LOAD => {
+                println!("OP_VALUE_LOAD");
             }
             OP_END => {
                 println!("OP_END");
@@ -194,12 +194,20 @@ impl CodeGenVisitor {
         self.labels.insert(label, self.bytecode.len());
     }
 
-        // We don't use usize since the constant pool can only take the size that we specify, which is bounded.
+    // We don't use usize since the constant pool can only take the size that we specify, which is bounded.
     pub fn intern_string(&mut self, s: &str) -> i32 {
         // Check if string is in the pool
-        let pos = self.constant_pool.iter().position(|v| if let Value::String(vs) = v { vs == s } else { false });
+        let pos = self.constant_pool.iter().position(|v| {
+            if let Value::String(vs) = v {
+                vs == s
+            } else {
+                false
+            }
+        });
         // If it is, return its position.
-        if let Some(pos)  = pos { return pos as i32;  }
+        if let Some(pos) = pos {
+            return pos as i32;
+        }
         // If not, place a copy in the constant pool.
         self.constant_pool.push(Value::String(s.to_string()));
         (self.constant_pool.len() - 1) as i32
@@ -218,55 +226,56 @@ impl CodeGenVisitor {
     /// - count
     /// Stack after:
     /// - spread ref
-    pub fn push_spread_new(&mut self, size: usize, kind: SpreadKind) {
-        // Push spread size
-        self.bytecode.push(OP_CONST_I32);
-        (size as i32).to_bytecode(&mut self.bytecode);
-        // Push spread creation + type
-        self.bytecode.push(OP_SPREAD_NEW);
-        self.bytecode.push(SpreadKind::Int.into());
-    }
+    // pub fn push_spread_new(&mut self, size: usize, kind: SpreadKind) {
+    //     // Push spread size
+    //     self.bytecode.push(OP_CONST_I32);
+    //     (size as i32).to_bytecode(&mut self.bytecode);
+    //     // Push spread creation + type
+    //     self.bytecode.push(OP_SPREAD_NEW);
+    //     self.bytecode.push(SpreadKind::Int.into());
+    // }
 
-    /// This instruction assumes the spread ref is already on the stack.
-    pub fn push_spread_store_i32(&mut self, index: usize, v: i32) {
-        self.push_const_i32(index as i32);
-        self.push_const_i32(v);
-        self.bytecode.push(OP_SPREAD_STORE);
-    }
+    // /// This instruction assumes the spread ref is already on the stack.
+    // pub fn push_spread_store_i32(&mut self, index: usize, v: i32) {
+    //     self.push_const_i32(index as i32);
+    //     self.push_const_i32(v);
+    //     self.bytecode.push(OP_SPREAD_STORE);
+    // }
 
-    fn visit_spread(&mut self, spread: &Spread, _context: &mut CompilerContext) {
-        self.constant_pool.push(Value::Spread(spread.clone()));
+    fn visit_value(&mut self, value: &Value, _context: &mut CompilerContext) {
+        // FIXME: For singular int / float values this is overkill. Generate different bytecode.
+        self.constant_pool.push(value.clone());
         let index = (self.constant_pool.len() - 1) as i32;
         self.push_const_i32(index);
-        self.bytecode.push(OP_SPREAD_LOAD);
+        self.bytecode.push(OP_VALUE_LOAD);
         //OP_SPREAD_LOAD
         //.to_bytecode(&mut self.bytecode);
         //self.bytecode.
-    //     match spread {
-    //         Spread::Int(vals) => {
-    //             if vals.len() == 1 {
-    //                 self.push_const_i32(vals[0]);
-    //             } else {
-    //                 self.push_spread_new(vals.len(), SpreadKind::Int);
-    //                 // Store all values
-    //                 for (index, v) in vals.iter().enumerate() {
-    //                     // Duplicate reference to spread
-    //                     self.push_dup();
-    //                     self.push_spread_store_i32(index, *v);
-    //                 }
-    //                 // What's left on the stack is a reference to the spread.
-    //             }
-    //         }
-    //         Spread::Float(vals) => {
-    //             if vals.len() == 1 {
-    //                 self.bytecode.push(OP_CONST_F32);
-    //                 vals[0].to_bytecode(&mut self.bytecode);
-    //             } else {
-    //                 // FIXME: implement
-    //             }
-    //         }
-    //         Spread::String(vals) => if vals.len() == 1 {},
-    //     }
+        //     match spread {
+        //         Spread::Int(vals) => {
+        //             if vals.len() == 1 {
+        //                 self.push_const_i32(vals[0]);
+        //             } else {
+        //                 self.push_spread_new(vals.len(), SpreadKind::Int);
+        //                 // Store all values
+        //                 for (index, v) in vals.iter().enumerate() {
+        //                     // Duplicate reference to spread
+        //                     self.push_dup();
+        //                     self.push_spread_store_i32(index, *v);
+        //                 }
+        //                 // What's left on the stack is a reference to the spread.
+        //             }
+        //         }
+        //         Spread::Float(vals) => {
+        //             if vals.len() == 1 {
+        //                 self.bytecode.push(OP_CONST_F32);
+        //                 vals[0].to_bytecode(&mut self.bytecode);
+        //             } else {
+        //                 // FIXME: implement
+        //             }
+        //         }
+        //         Spread::String(vals) => if vals.len() == 1 {},
+        //     }
     }
 }
 
@@ -287,8 +296,8 @@ impl Visitor for CodeGenVisitor {
                             self.visit(output_node, context)?;
                         }
                         None => {
-                            let spread = node.values.get(&input_port).unwrap();
-                            self.visit_spread(spread, context);
+                            let value = node.values.get(&input_port).unwrap();
+                            self.visit_value(value, context);
                         }
                     }
                 }

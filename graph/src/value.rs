@@ -2,6 +2,34 @@
 //! We have support for singular as well as composite values.
 use serde::{Deserialize, Serialize};
 
+#[derive(Debug, Clone, Copy)]
+pub enum ValueKind {
+    Int,
+    Float,
+    String,
+}
+
+impl From<u8> for ValueKind {
+    fn from(kind: u8) -> ValueKind {
+        match kind {
+            1 => ValueKind::Int,
+            2 => ValueKind::Float,
+            3 => ValueKind::String,
+            _ => panic!("Invalid ValueKind {}", kind),
+        }
+    }
+}
+
+impl Into<u8> for ValueKind {
+    fn into(self) -> u8 {
+        match self {
+            ValueKind::Int => 1,
+            ValueKind::Float => 2,
+            ValueKind::String => 3,
+        }
+    }
+}
+
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub enum Value {
     Int(i32),

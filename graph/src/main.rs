@@ -2,12 +2,11 @@ mod bytecode;
 mod compiler;
 mod network;
 mod svg;
-mod vm;
 mod value;
+mod vm;
 
 use crate::compiler::{compile_network, print_bytecode};
 use crate::network::Network;
-use crate::network::Spread;
 use crate::svg::network_to_svg;
 use crate::vm::VM;
 use std::fs;
@@ -60,5 +59,4 @@ fn main() {
     // // spread.to_json
     // let serialized = serde_json::to_string(&spread).unwrap();
     // println!("{:?}", serialized);
-
 }
