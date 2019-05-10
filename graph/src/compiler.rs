@@ -70,6 +70,13 @@ impl ToByteCode for NodeKind {
     }
 }
 
+pub fn print_constant_pool(constant_pool: &Vec<Value>) {
+    for i in 0..constant_pool.len() {
+        let value = &constant_pool[i];
+        println!("{:2}: {:?}", i, value);
+    }
+}
+
 pub fn print_bytecode(bytecode: &Vec<u8>) {
     let mut index: usize = 0;
     loop {

@@ -5,7 +5,7 @@ mod svg;
 mod value;
 mod vm;
 
-use crate::compiler::{compile_network, print_bytecode};
+use crate::compiler::{compile_network, print_bytecode, print_constant_pool};
 use crate::network::Network;
 use crate::svg::network_to_svg;
 use crate::vm::VM;
@@ -46,6 +46,7 @@ fn main() {
 
     let result = compile_network(&network).unwrap();
     println!("Bytecode: {:?}", result.bytecode);
+    print_constant_pool(&result.constant_pool);
     print_bytecode(&result.bytecode);
 
     let mut vm = VM::new(result.bytecode, result.constant_pool);
