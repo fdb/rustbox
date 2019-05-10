@@ -10,6 +10,20 @@ pub const OP_CONST_F32: u8 = 0x02;
 /// Stack: Value -> Value, Value
 pub const OP_DUP: u8 = 0x03;
 
+/// Discard the Value on top of the stack.
+/// Stack: Value ->
+pub const OP_POP: u8 = 0x04;
+
+/// Unconditional jump.
+/// Stack: ->
+/// Instruction bytes: 1: index byte 1, 2: index byte 2
+pub const OP_JMP: u8 = 0x99;
+
+/// Compare two values on the stack and jump to the given instruction label.
+/// Stack: Value, Value ->
+/// Instruction bytes: 1: index byte 1, 2: index byte 2
+pub const OP_IF_EQ_I32: u8 = 0x9F;
+
 // pub const OP_SPREAD_NEW: u8 = 0x04;
 // pub const OP_SPREAD_STORE: u8 = 0x05;
 

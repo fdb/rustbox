@@ -26,7 +26,7 @@ fn main() {
 
     // let serialized = serde_json::to_string(&network).unwrap();
     // println!("{:?}", serialized);
-    let path = "data/graph1.json";
+    let path = "data/graph2.json";
     let file = File::open(path).unwrap();
     let network: Network = serde_json::from_reader(file).unwrap();
     // println!("{:?}", u);
@@ -46,8 +46,12 @@ fn main() {
 
     let result = compile_network(&network).unwrap();
     println!("Bytecode: {:?}", result.bytecode);
+    println!("Constants:");
     print_constant_pool(&result.constant_pool);
+    println!("========================");
+    println!("Instructions:");
     print_bytecode(&result.bytecode);
+    println!("========================");
 
     let mut vm = VM::new(result.bytecode, result.constant_pool);
     let result = vm.run();

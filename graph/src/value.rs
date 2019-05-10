@@ -30,7 +30,7 @@ impl Into<u8> for ValueKind {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 pub enum Value {
     Int(i32),
     Float(f32),

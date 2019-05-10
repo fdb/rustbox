@@ -82,6 +82,27 @@ impl VM {
                     let v = self.stack[self.stack.len() - 1].clone();
                     self.stack.push(v);
                 }
+                OP_POP => {
+                    self.stack.pop();
+                }
+                OP_JMP => {
+                    let mut addr: [u8; 2] = [0; 2];
+                    addr.copy_from_slice(&self.bytecode[self.ip..self.ip + 2]);
+                    self.ip += 2;
+                    let addr: u16 = unsafe { std::mem::transmute(addr) };
+                    self.ip = addr as usize;
+                }
+                OP_IF_EQ_I32 => {
+                    let mut addr: [u8; 2] = [0; 2];
+                    addr.copy_from_slice(&self.bytecode[self.ip..self.ip + 2]);
+                    self.ip += 2;
+                    let addr: u16 = unsafe { std::mem::transmute(addr) };
+                    let v1 = self.stack.pop();
+                    let v2 = self.stack.pop();
+                    if v1 == v2 {
+                        self.ip = addr as usize;
+                    }
+                }
                 // OP_SPREAD_NEW => {
                 //     let spread_kind = self.bytecode[self.ip];
                 //     self.ip += 1;

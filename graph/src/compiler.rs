@@ -80,6 +80,7 @@ pub fn print_constant_pool(constant_pool: &Vec<Value>) {
 pub fn print_bytecode(bytecode: &Vec<u8>) {
     let mut index: usize = 0;
     loop {
+        print!("{:4} ", index);
         let op = bytecode[index];
         index += 1;
         match op {
@@ -93,6 +94,21 @@ pub fn print_bytecode(bytecode: &Vec<u8>) {
             }
             OP_DUP => {
                 println!("OP_DUP");
+            }
+            OP_POP => {
+                println!("OP_POP");
+            }
+            OP_JMP => {
+                let addr0 = bytecode[index + 0];
+                let addr1 = bytecode[index + 1];
+                index += 2;
+                println!("OP_JMP {} {}", addr0, addr1);
+            }
+            OP_IF_EQ_I32 => {
+                let addr0 = bytecode[index + 0];
+                let addr1 = bytecode[index + 1];
+                index += 2;
+                println!("OP_IF_EQ_I32 {} {}", addr0, addr1);
             }
             OP_CALL_NODE => {
                 let kind = bytecode[index];
@@ -201,6 +217,10 @@ impl CodeGenVisitor {
         self.labels.insert(label, self.bytecode.len());
     }
 
+    pub fn find_label(&self, label: &str) -> Option<usize> {
+        self.labels.get(label).map(|pos| *pos)
+    }
+
     // We don't use usize since the constant pool can only take the size that we specify, which is bounded.
     pub fn intern_string(&mut self, s: &str) -> i32 {
         // Check if string is in the pool
@@ -234,6 +254,23 @@ impl CodeGenVisitor {
         self.bytecode.push(OP_DUP);
     }
 
+    pub fn push_pop(&mut self) {
+        self.bytecode.push(OP_POP);
+    }    
+
+    pub fn push_jmp(&mut self, addr: u16) {
+        let addr: [u8; 2] = unsafe { std::mem::transmute(addr) };
+        self.bytecode.push(OP_JMP);
+        self.bytecode.extend(addr.iter());
+    }
+
+    pub fn push_if_eq_i32(&mut self, addr: u16) {
+        let addr: [u8; 2] = unsafe { std::mem::transmute(addr) };
+        self.bytecode.push(OP_IF_EQ_I32);
+        self.bytecode.extend(addr.iter());
+    }
+
+
     /// Stack before:
     /// - count
     /// Stack after:
@@ -266,12 +303,94 @@ impl CodeGenVisitor {
             }
         }
     }
+
+    fn visit_input_port(
+        &mut self,
+        node: &Node,
+        input_port: &str,
+        context: &mut CompilerContext,
+    ) -> Result<(), CompileError> {
+        match context.network.find_output_node(node, &input_port) {
+            Some(output_node) => {
+                self.visit(output_node, context)?;
+            }
+            None => {
+                let value = node.values.get(input_port).unwrap();
+                self.visit_value(value, context);
+            }
+        }
+        Ok(())
+    }
 }
 
 impl Visitor for CodeGenVisitor {
     fn visit(&mut self, node: &Node, context: &mut CompilerContext) -> Result<(), CompileError> {
+        let label = self.mark_label(node.name.clone());
         match node.kind {
             NodeKind::Switch => {
+                let mut node_fixups = HashMap::new();
+                let mut jmp_fixups = Vec::new();
+                let index_port = &node.kind.inputs()[0];
+                self.visit_input_port(node, &index_port, context)?;
+                // Now we have the index value of the input to select on the stack.
+                let mut port_index = 0;
+                for input_port in node.kind.inputs().iter().skip(1) {
+                    if let Some(output_node) = context.network.find_output_node(node, &input_port) {
+                        // FIXME: better error checking. What happens if we can't find the label here? Is this a compilation error?
+                        // let label = self.find_label(&output_node.name).unwrap();
+                        // let label: u16 = label as u16;
+                        // let label: [u8; 2] = unsafe { std::mem::transmute(label) };
+                        // Duplicate the index value.
+                        self.push_dup();
+                        self.push_const_i32(port_index);
+                        self.push_if_eq_i32(0xcccc);
+                        node_fixups.insert(output_node.name.clone(), self.bytecode.len() - 2);
+                    }
+                    port_index += 1;
+                }
+                // Discard (pop) the index value from the stack.
+                self.push_pop();
+                // Jump to the end of the node.
+                self.push_jmp(0xcccc);
+                jmp_fixups.push(self.bytecode.len() - 2);
+
+                // First visit all available switch inputs.
+                // FIXME: If the value for switch is constant, we only need to generate the bytecode for the port that is selected.
+                let other_inputs = node.kind.inputs();
+                for input_port in other_inputs.iter().skip(1) {
+                    println!("Visiting {}", input_port);
+                    // Visiting the input port also has the side effect that we write out the label (bytecode position) for that node.
+                    // We need this position to jump to it from the switch node.
+                    self.visit_input_port(node, input_port, context)?;
+                    self.push_jmp(0xcccc);
+                    jmp_fixups.push(self.bytecode.len() - 2);
+                }
+
+                let end_addr = self.bytecode.len();
+                let end_addr = end_addr as u16;
+                let end_addr: [u8; 2] = unsafe { std::mem::transmute(end_addr) };
+                for fixup in &jmp_fixups {
+                    self.bytecode[*fixup] = end_addr[0];
+                    self.bytecode[*fixup + 1] = end_addr[1];
+                }
+
+                for (node_name, addr) in &node_fixups {
+                    let node_addr = self.labels[node_name];
+                    let node_addr = node_addr as u16;
+                    let node_addr: [u8; 2] = unsafe { std::mem::transmute(node_addr) };
+                    self.bytecode[*addr] = node_addr[0];
+                    self.bytecode[*addr + 1] = node_addr[1];
+                }
+
+                // print_bytecode(&self.bytecode);
+                // println!("LABELS: {:?}", self.labels);
+                // println!("FIXUPS: {:?}", node_fixups);
+                // println!("JMP FIXUPS: {:?}", jmp_fixups);
+
+                // Afterwards the value of the input_port is still on the stack.
+
+                //self.bytecode.push()
+
                 // Evaluate the first op
                 // Compare the output to see the result
                 // Switch based on the label
@@ -280,15 +399,7 @@ impl Visitor for CodeGenVisitor {
                 // Prepare arguments
                 let input_ports = node.kind.inputs();
                 for input_port in input_ports {
-                    match context.network.find_output_node(node, &input_port) {
-                        Some(output_node) => {
-                            self.visit(output_node, context)?;
-                        }
-                        None => {
-                            let value = node.values.get(&input_port).unwrap();
-                            self.visit_value(value, context);
-                        }
-                    }
+                    self.visit_input_port(node, &input_port, context)?;
                 }
                 self.bytecode.push(OP_CALL_NODE);
                 node.kind.to_bytecode(&mut self.bytecode);
