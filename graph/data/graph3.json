@@ -1,0 +1,18 @@
+{
+    "name": "net1",
+    "rendered_node": "negate1",
+    "nodes":[
+      {"name":"frame1","x":1,"y":1,"kind":"Frame","values":{}},
+      {"name":"int1","x":2,"y":1,"kind":"Int","values":{"v":{"IntList":[1, 10, 100]}}},
+      {"name":"int2","x":3,"y":1,"kind":"Int","values":{"v":{"IntList":[2, 20, 200]}}},
+      {"name":"switch1","x":1,"y":3,"kind":"Switch", "values":{"index": {"Int": 0}, "in2": {"Int": 222},"in3": {"Int": 333}}},
+      {"name":"negate1","x":1,"y":5,"kind":"Negate","values":{}}
+    ],
+    "connections": [
+      {"output": "frame1", "input": "switch1", "port": "index" },
+      {"output": "int1", "input": "switch1", "port": "in0" },
+      {"output": "int2", "input": "switch1", "port": "in1" },
+      {"output": "switch1", "input": "negate1", "port": "v" }
+    ]
+  }
+  
