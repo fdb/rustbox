@@ -46,6 +46,7 @@ fn main() {
 
     let mut svg = String::new();
     svg += r#"<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600">"#;
+    svg += r#"<rect x="0" y="0" width="800" height="600" fill="white"/>"#;
     svg += &network_to_svg(&network);
     svg += r#"</svg>"#;
     // println!("{}", svg);
