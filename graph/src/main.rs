@@ -5,12 +5,14 @@ mod svg;
 mod value;
 mod vm;
 
+use std::env;
+use std::fs;
+use std::fs::File;
+
 use crate::compiler::{compile_network, print_bytecode, print_constant_pool};
 use crate::network::Network;
 use crate::svg::network_to_svg;
 use crate::vm::VM;
-use std::fs;
-use std::fs::File;
 
 fn main() {
     // let mut values = HashMap::new();
@@ -26,10 +28,21 @@ fn main() {
 
     // let serialized = serde_json::to_string(&network).unwrap();
     // println!("{:?}", serialized);
-    let path = "data/graph2.json";
-    let file = File::open(path).unwrap();
+
+    let args: Vec<_> = env::args().collect();
+    if args.len() != 2 {
+        println!("Usage: cargo run PROJECT_FILE");
+        std::process::exit(1);
+    }
+
+    let path = &args[1];
+    let result = File::open(path);
+    if let Err(err) = result {
+        println!("Error when opening {}: {}", path, err.to_string());
+        return;
+    }
+    let file = result.unwrap();
     let network: Network = serde_json::from_reader(file).unwrap();
-    // println!("{:?}", u);
 
     let mut svg = String::new();
     svg += r#"<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600">"#;
