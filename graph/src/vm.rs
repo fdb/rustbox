@@ -95,8 +95,6 @@ impl VM {
                     self.ip = addr as usize;
                 }
                 OP_IF_EQ_I32 => {
-                    //let mut addr: [u8; 2] = [0; 2];
-                    //addr.copy_from_slice(&self.bytecode[self.ip..self.ip + 2]);
                     let addr = self.read_short();
                     let v1 = self.stack.pop();
                     let v2 = self.stack.pop();
