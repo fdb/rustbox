@@ -256,20 +256,22 @@ impl CodeGenVisitor {
 
     pub fn push_pop(&mut self) {
         self.bytecode.push(OP_POP);
-    }    
+    }
+
+    pub fn push_address(&mut self, addr: u16) {
+        self.bytecode.push(((addr >> 8) & 0xff) as u8);
+        self.bytecode.push((addr & 0xff) as u8);
+    }
 
     pub fn push_jmp(&mut self, addr: u16) {
-        let addr: [u8; 2] = unsafe { std::mem::transmute(addr) };
         self.bytecode.push(OP_JMP);
-        self.bytecode.extend(addr.iter());
+        self.push_address(addr);
     }
 
     pub fn push_if_eq_i32(&mut self, addr: u16) {
-        let addr: [u8; 2] = unsafe { std::mem::transmute(addr) };
         self.bytecode.push(OP_IF_EQ_I32);
-        self.bytecode.extend(addr.iter());
+        self.push_address(addr);
     }
-
 
     /// Stack before:
     /// - count
@@ -368,18 +370,17 @@ impl Visitor for CodeGenVisitor {
 
                 let end_addr = self.bytecode.len();
                 let end_addr = end_addr as u16;
-                let end_addr: [u8; 2] = unsafe { std::mem::transmute(end_addr) };
+                //let end_addr: [u8; 2] = unsafe { std::mem::transmute(end_addr) };
                 for fixup in &jmp_fixups {
-                    self.bytecode[*fixup] = end_addr[0];
-                    self.bytecode[*fixup + 1] = end_addr[1];
+                    self.bytecode[*fixup] = ((end_addr >> 8) & 0xff) as u8;
+                    self.bytecode[*fixup + 1] = (end_addr & 0xff) as u8;
                 }
 
                 for (node_name, addr) in &node_fixups {
                     let node_addr = self.labels[node_name];
                     let node_addr = node_addr as u16;
-                    let node_addr: [u8; 2] = unsafe { std::mem::transmute(node_addr) };
-                    self.bytecode[*addr] = node_addr[0];
-                    self.bytecode[*addr + 1] = node_addr[1];
+                    self.bytecode[*addr] = ((node_addr >> 8) & 0xff) as u8;
+                    self.bytecode[*addr + 1] = (node_addr & 0xff) as u8;
                 }
 
                 // print_bytecode(&self.bytecode);

@@ -56,6 +56,11 @@ impl VM {
         }
     }
 
+    fn read_short(&mut self) -> u16 {
+        self.ip += 2;
+        (self.bytecode[self.ip - 2] as u16) << 8 | self.bytecode[self.ip - 1] as u16
+    }
+
     // pub fn check_spread_value(&self, value: Value) -> Result<Spread, RuntimeError> {
     //     match value {
     //         Value::Spread(v) => Ok(v),
@@ -86,17 +91,13 @@ impl VM {
                     self.stack.pop();
                 }
                 OP_JMP => {
-                    let mut addr: [u8; 2] = [0; 2];
-                    addr.copy_from_slice(&self.bytecode[self.ip..self.ip + 2]);
-                    self.ip += 2;
-                    let addr: u16 = unsafe { std::mem::transmute(addr) };
+                    let addr = self.read_short();
                     self.ip = addr as usize;
                 }
                 OP_IF_EQ_I32 => {
-                    let mut addr: [u8; 2] = [0; 2];
-                    addr.copy_from_slice(&self.bytecode[self.ip..self.ip + 2]);
-                    self.ip += 2;
-                    let addr: u16 = unsafe { std::mem::transmute(addr) };
+                    //let mut addr: [u8; 2] = [0; 2];
+                    //addr.copy_from_slice(&self.bytecode[self.ip..self.ip + 2]);
+                    let addr = self.read_short();
                     let v1 = self.stack.pop();
                     let v2 = self.stack.pop();
                     if v1 == v2 {
