@@ -1,6 +1,7 @@
 [workspace]
 members = [
   "clibox",
-  "wasmbox",
+  "emitwasm",
   "graph",
+  "wasmbox",
 ]
