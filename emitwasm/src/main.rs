@@ -1,5 +1,6 @@
 use std::collections::HashMap;
-use walrus::{FunctionBuilder, Module, ModuleConfig, ValType};
+use walrus::{FunctionBuilder, Module, ModuleConfig, ValType, ImportKind};
+use walrus::ir::UnaryOp;
 
 #[derive(Debug, Copy, Clone)]
 pub enum NodeKind {
@@ -71,16 +72,26 @@ fn main() {
     let config = ModuleConfig::new();
     //config.
     let mut module = Module::with_config(config);
-    let ty = module.types.add(&[ValType::F32], &[ValType::F32]);
+
+    // let negate_import_id = module.imports.add("env", "negate", ImportKind::Function);
+    // let negate_fn_type = module.types.add(&[ValType::F32], &[ValType::F32]);
+
+    // let negate_import_id = module.imports.
+    // let negate_fn_id = module.functions.add_import(negate_fn_type, )
+    let negate_fn_type = module.types.add(&[ValType::F32], &[ValType::F32]);
     let mut builder = FunctionBuilder::new();
+    // builder.call()
     // let mut block_builder = builder.block(Box::new([]), Box::new([]));
     // block_builder.
     // println!("{:?}", builder.expr);
     //builder.expr.call()
     //builder.block(params: Box<[ValType]>, results: Box<[ValType]>)
+    //builder.
     let expr = builder.f32_const(42.0);
+    let expr = builder.unop(UnaryOp::F32Neg, expr);
+    // let expr = builder.call()
     //let unreachable = builder.unreachable();
-    let fid = builder.finish(ty, vec![], vec![expr], &mut module);
+    let fid = builder.finish(negate_fn_type, vec![], vec![expr], &mut module);
     module.exports.add("main", fid);
 
     module.emit_wasm_file("out.wasm").unwrap();
