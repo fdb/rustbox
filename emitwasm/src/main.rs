@@ -1,6 +1,5 @@
 use std::collections::HashMap;
-use walrus::{FunctionBuilder, Module, ModuleConfig, ValType, ImportKind};
-use walrus::ir::UnaryOp;
+use walrus::{FunctionBuilder, Module, ModuleConfig, ValType};
 
 #[derive(Debug, Copy, Clone)]
 pub enum NodeKind {
@@ -59,52 +58,26 @@ pub struct Network {
 }
 
 fn main() {
-    let mut negate1_values = HashMap::new();
-    negate1_values.insert("v".to_string(), 42.0);
-    let negate1 = Node {
-        name: "negate1".to_string(),
-        x: 0,
-        y: 0,
-        kind: NodeKind::Negate,
-        values: negate1_values,
-    };
-
+    // Construct a Walrus module
     let config = ModuleConfig::new();
-    //config.
     let mut module = Module::with_config(config);
 
-    // let negate_import_id = module.imports.add("env", "negate", ImportKind::Function);
-    // let negate_fn_type = module.types.add(&[ValType::F32], &[ValType::F32]);
+    // Import the "negate" function.
+    let negate_func_type = module.types.add(&[ValType::F32], &[ValType::F32]);
+    let negate_func = module.add_import_func("env", "negate", negate_func_type);
+    
+    // Create the main function type.
+    let main_func_type = module.types.add(&[], &[ValType::F32]);
 
-    // let negate_import_id = module.imports.
-    // let negate_fn_id = module.functions.add_import(negate_fn_type, )
-    let negate_fn_type = module.types.add(&[ValType::F32], &[ValType::F32]);
+    // Build the function.
     let mut builder = FunctionBuilder::new();
-    // builder.call()
-    // let mut block_builder = builder.block(Box::new([]), Box::new([]));
-    // block_builder.
-    // println!("{:?}", builder.expr);
-    //builder.expr.call()
-    //builder.block(params: Box<[ValType]>, results: Box<[ValType]>)
-    //builder.
-    let expr = builder.f32_const(42.0);
-    let expr = builder.unop(UnaryOp::F32Neg, expr);
-    // let expr = builder.call()
-    //let unreachable = builder.unreachable();
-    let fid = builder.finish(negate_fn_type, vec![], vec![expr], &mut module);
-    module.exports.add("main", fid);
+    let const_expr = builder.f32_const(42.0);
+    let expr = builder.call(negate_func, Box::new([const_expr]));
+    let main_func = builder.finish(main_func_type, vec![], vec![expr], &mut module);
+    
+    // Add the function to the exports.
+    module.exports.add("main", main_func);
 
+    // Emit the WASM file.
     module.emit_wasm_file("out.wasm").unwrap();
-
-    //block.expr(ExprId::)
-    //builder.f32_const(42.0);
-    let negate_fn = "negate1"; // GEt function id.
-
-    // Create box of arguments.
-    // let args = []
-    // builder.call();
-
-    // walrus::ir::Expr::Call()
-
-    println!("{:?}", negate1);
 }
