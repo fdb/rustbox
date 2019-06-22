@@ -58,7 +58,7 @@ pub struct Network {
 }
 
 fn main() {
-    // Construct a Walrus module
+    // Construct a Walrus module.
     let config = ModuleConfig::new();
     let mut module = Module::with_config(config);
 
