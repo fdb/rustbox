@@ -1,3 +1,4 @@
+mod project;
 extern crate libc;
 
 use std::boxed::Box;
@@ -5,6 +6,7 @@ use std::ffi::{CString, CStr};
 use std::os::raw::c_char;
 use std::ptr;
 use libc::c_void;
+use project::{Project,Network, Node, NodeType};
 
 #[repr(C)]
 pub struct Editor {
