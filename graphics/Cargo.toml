@@ -1,0 +1,11 @@
+[package]
+name = "graphics"
+version = "0.1.0"
+authors = ["Frederik De Bleser <frederik@debleser.be>"]
+
+[dependencies]
+gl = "0.6"
+
+[dev-dependencies]
+glutin = "0.8"
+rand = "0.3"
